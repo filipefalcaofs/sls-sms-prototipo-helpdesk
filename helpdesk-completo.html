@@ -188,6 +188,37 @@
     .sla-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;}
     .sla-row .k{color:var(--slate-500);}
 
+    /* ---------- Base de Conhecimento ---------- */
+    .kb-hero{background:linear-gradient(135deg,var(--azul-600),var(--azul-700));border-radius:var(--radius);padding:22px;color:#fff;margin-bottom:16px;}
+    .kb-hero h2{margin:0 0 4px;font-size:18px;}
+    .kb-hero p{margin:0 0 14px;color:#dbe9fb;font-size:13px;}
+    .kb-srch{position:relative;max-width:560px;}
+    .kb-srch svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--slate-400);}
+    .kb-srch input{width:100%;height:42px;border:0;border-radius:10px;padding:0 14px 0 40px;font-size:14px;outline:none;}
+    .kb-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .kb-cat{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);padding:14px;cursor:pointer;text-align:left;transition:.15s;}
+    .kb-cat:hover{border-color:#85c2ff;box-shadow:0 8px 20px rgba(15,23,42,.06);}
+    .kb-cat.sel{border-color:var(--azul-500);box-shadow:inset 0 0 0 1px var(--azul-500);}
+    .kb-cat .ci{width:34px;height:34px;border-radius:9px;background:var(--azul-50);color:var(--azul-700);display:grid;place-items:center;margin-bottom:10px;}
+    .kb-cat h4{margin:0 0 3px;font-size:14px;}
+    .kb-cat p{margin:0;font-size:12px;color:var(--slate-500);}
+    .kb-cat .n{font-size:11px;color:var(--azul-700);font-weight:700;margin-top:8px;display:block;}
+    .art-row{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--slate-100);cursor:pointer;}
+    .art-row:hover{background:var(--azul-50);}
+    .art-row .ai{width:36px;height:36px;border-radius:9px;background:var(--slate-100);color:var(--azul-700);display:grid;place-items:center;flex:0 0 auto;}
+    .art-row h4{margin:0 0 3px;font-size:14px;color:var(--slate-900);}
+    .art-row p{margin:0;font-size:12.5px;color:var(--slate-500);}
+    .art-row .am{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--slate-400);}
+    .art-read{max-width:780px;margin:0 auto;background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);padding:28px 32px;}
+    .art-read h1{font-size:24px;margin:10px 0 6px;letter-spacing:-.02em;}
+    .art-read .am{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--slate-400);margin-bottom:18px;}
+    .art-read .ct{color:var(--slate-700);font-size:14.5px;line-height:1.7;}
+    .art-read .ct h2{font-size:16px;margin:22px 0 8px;color:var(--slate-900);}
+    .art-read .ct ul,.art-read .ct ol{padding-left:20px;}
+    .art-read .ct li{margin:5px 0;}
+    @media(max-width:1024px){.kb-cats{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:640px){.kb-cats{grid-template-columns:1fr;}}
+
     /* ---------- Modal ---------- */
     .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
     .overlay.open{display:flex;}
@@ -232,8 +263,8 @@
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="file-text"></i> Solicitações</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="badge-check"></i> Alvarás e DAM</a>
         <div class="grp">Atendimento</div>
-        <a href="#" class="active" onclick="irLista(event)"><i data-lucide="headphones"></i> Central de Chamados <span class="count" id="navCount">0</span></a>
-        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="book-open"></i> Base de Conhecimento</a>
+        <a href="#" id="nav-chamados" class="active" onclick="irChamados(event)"><i data-lucide="headphones"></i> Central de Chamados <span class="count" id="navCount">0</span></a>
+        <a href="#" id="nav-kb" onclick="irKB(event)"><i data-lucide="book-open"></i> Base de Conhecimento</a>
         <div class="grp">Gestão</div>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="bar-chart-3"></i> Relatórios</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="settings"></i> Configurações</a>
@@ -352,6 +383,30 @@
 
         <!-- ====== DETALHE ====== -->
         <section id="view-detalhe" class="hidden"></section>
+
+        <!-- ====== BASE DE CONHECIMENTO ====== -->
+        <section id="view-kb" class="hidden">
+          <div class="page-head">
+            <div>
+              <h1>Base de Conhecimento</h1>
+              <p>Artigos de autoatendimento usados pela equipe e publicados para o cidadão no Portal.</p>
+            </div>
+            <button class="btn" onclick="novoArtigo()"><i data-lucide="plus"></i> Novo artigo</button>
+          </div>
+          <div class="kb-hero">
+            <h2>Como podemos ajudar?</h2>
+            <p>Busque por licenciamento, DAM, acesso ao portal ou envio de documentos.</p>
+            <div class="kb-srch"><i data-lucide="search"></i><input id="kb-busca" placeholder="Buscar artigos..." oninput="renderKB()" /></div>
+          </div>
+          <div class="kb-cats" id="kb-cats"></div>
+          <div class="panel">
+            <div class="tbl-foot" style="border-bottom:1px solid var(--slate-200)"><strong id="kb-count" style="color:var(--slate-700)">Artigos</strong><button class="btn ghost sm" onclick="kbLimpar()">Ver todos</button></div>
+            <div id="kb-list"></div>
+          </div>
+        </section>
+
+        <!-- ====== ARTIGO ====== -->
+        <section id="view-artigo" class="hidden"></section>
       </div>
     </div>
   </div>
@@ -373,6 +428,25 @@
         <div class="field"><label>Descrição</label><textarea class="inp" id="n-descricao" rows="4" placeholder="Descreva o problema, módulo afetado e passos para reproduzir..."></textarea></div>
       </div>
       <div class="mf"><button class="btn sec" onclick="fecharNovo()">Cancelar</button><button class="btn" onclick="salvarNovo()"><i data-lucide="send"></i> Enviar chamado</button></div>
+    </div>
+  </div>
+
+  <!-- Modal novo artigo -->
+  <div class="overlay" id="overlay-art">
+    <div class="modal">
+      <div class="mh"><h2>Novo artigo da Base de Conhecimento</h2><button class="icon-btn" onclick="fecharArtigo()"><i data-lucide="x"></i></button></div>
+      <div class="mb">
+        <div class="field"><label>Título</label><input class="inp" id="a-titulo" placeholder="Ex.: Como solicitar a renovação do alvará" /></div>
+        <div class="grid2">
+          <div class="field"><label>Categoria</label>
+            <select class="inp" id="a-categoria"><option>Licenciamento</option><option>DAM/Pagamento</option><option>Acesso ao portal</option><option>Documentos</option></select></div>
+          <div class="field"><label>Situação</label>
+            <select class="inp" id="a-status"><option value="publicado">Publicado</option><option value="rascunho">Rascunho</option></select></div>
+        </div>
+        <div class="field"><label>Resumo</label><textarea class="inp" id="a-resumo" rows="2" placeholder="Breve descrição que aparece na busca..."></textarea></div>
+        <div class="field"><label>Conteúdo</label><textarea class="inp" id="a-conteudo" rows="5" placeholder="Escreva o passo a passo do artigo..."></textarea></div>
+      </div>
+      <div class="mf"><button class="btn sec" onclick="fecharArtigo()">Cancelar</button><button class="btn" onclick="salvarArtigo()"><i data-lucide="save"></i> Salvar artigo</button></div>
     </div>
   </div>
 
@@ -428,7 +502,26 @@
     const BAIRROS=['Pituba','Itapuã','Valéria','Brotas','Cajazeiras'];
     const CATS={cidadao:['Dúvida sobre licenciamento','Problema no DAM/pagamento','Documentação','Acesso ao portal','Renovação de alvará'],interno:['Erro no sistema','Solicitação de acesso','Lentidão','Dúvida de uso']};
 
-    const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta'};
+    const KBCATS=[
+      {nome:'Licenciamento',ic:'shield-check',desc:'Solicitações, prazos e acompanhamento de alvará.'},
+      {nome:'DAM/Pagamento',ic:'receipt',desc:'Guias, segunda via e confirmação de pagamento.'},
+      {nome:'Acesso ao portal',ic:'key-round',desc:'Cadastro, senha, e-mail e primeiro acesso.'},
+      {nome:'Documentos',ic:'upload-cloud',desc:'Envio, formatos aceitos e correções solicitadas.'},
+    ];
+    let artigos=[
+      {id:1,titulo:'Como emitir a segunda via do DAM',categoria:'DAM/Pagamento',resumo:'Localize o DAM gerado e reprocesse a guia quando o pagamento não aparece.',leitura:'4 min',status:'publicado',views:1280,atualizado:'há 2 dias',
+        conteudo:`<p>Se você precisa da segunda via do DAM, siga os passos abaixo.</p><h2>Passo a passo</h2><ol><li>Acesse o Portal do Cidadão e entre em <strong>Meus alvarás</strong>.</li><li>Localize o estabelecimento e clique em <strong>DAMs / Taxas</strong>.</li><li>No DAM desejado, clique em <strong>Emitir segunda via</strong>.</li><li>Se o pagamento não aparecer após 2 dias úteis, abra um chamado na categoria <em>Problema no DAM/pagamento</em>.</li></ol><h2>Observações</h2><ul><li>O DAM tem validade; após o vencimento, gere uma nova guia.</li><li>O reprocessamento pode levar algumas horas após a confirmação da SEFAZ.</li></ul>`},
+      {id:2,titulo:'Documentos aceitos para renovação de alvará',categoria:'Documentos',resumo:'Formatos aceitos, tamanho máximo de 2 MB e o que fazer quando um PDF é rejeitado.',leitura:'6 min',status:'publicado',views:964,atualizado:'há 5 dias',
+        conteudo:`<p>Para a renovação do alvará sanitário, envie os documentos no formato correto.</p><h2>Formatos e limites</h2><ul><li>Formatos aceitos: <strong>PDF, JPG e PNG</strong>.</li><li>Tamanho máximo por arquivo: <strong>2 MB</strong>.</li></ul><h2>PDF rejeitado?</h2><ol><li>Verifique se o arquivo não está protegido por senha.</li><li>Reduza o tamanho se passar de 2 MB.</li><li>Reenvie pela tela de documentos da solicitação.</li></ol>`},
+      {id:3,titulo:'Recuperar acesso ao Portal do Cidadão',categoria:'Acesso ao portal',resumo:'Redefina a senha e, se necessário, abra um chamado público sem login.',leitura:'3 min',status:'publicado',views:2110,atualizado:'há 1 dia',
+        conteudo:`<p>Não consegue entrar no portal? Veja como recuperar o acesso.</p><h2>Redefinir senha</h2><ol><li>Na tela de login, clique em <strong>Esqueci minha senha</strong>.</li><li>Informe o CPF/CNPJ e o e-mail cadastrado.</li><li>Siga o link de redefinição enviado por e-mail.</li></ol><h2>Se o e-mail não chegar</h2><p>Verifique a caixa de spam. Persistindo, abra um <strong>chamado sem login</strong> na categoria Acesso ao portal informando CPF/CNPJ e um e-mail de contato.</p>`},
+      {id:4,titulo:'Como acompanhar o andamento da solicitação',categoria:'Licenciamento',resumo:'Veja onde acompanhar status, pendências e prazos da sua solicitação.',leitura:'5 min',status:'publicado',views:1542,atualizado:'há 3 dias',
+        conteudo:`<p>Acompanhe cada etapa da sua solicitação pelo Portal.</p><h2>Onde ver</h2><ol><li>Entre em <strong>Minhas solicitações</strong>.</li><li>Clique na solicitação para ver o <strong>status</strong> e o histórico.</li><li>Pendências aparecem destacadas, com o que precisa ser corrigido.</li></ol>`},
+      {id:5,titulo:'Quais CNAEs exigem responsável técnico',categoria:'Licenciamento',resumo:'Entenda quando o RT é obrigatório e como vinculá-lo.',leitura:'7 min',status:'rascunho',views:0,atualizado:'há 4 h',
+        conteudo:`<p>Alguns CNAEs exigem a vinculação de um responsável técnico (RT).</p><h2>Como saber</h2><p>Ao cadastrar o estabelecimento, o sistema indica se o CNAE exige RT. Quando exigido, é necessário vincular o RT, que deve confirmar o vínculo.</p>`},
+    ];
+
+    const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta', kbCat:'', artigoId:null};
 
     // ===================== Helpers =====================
     function badge(map,key){const m=map[key]||{lbl:key,cls:'b-slate'};return `<span class="badge ${m.cls}">${m.ic?`<i data-lucide="${m.ic}"></i>`:''}${m.lbl}</span>`;}
@@ -613,8 +706,9 @@
             </div>
           </div>
         </div>`;
-      document.getElementById('view-lista').classList.add('hidden');
+      hideAll();
       v.classList.remove('hidden');
+      setNav('nav-chamados');
       renderThread();
       window.scrollTo(0,0);
       icons();
@@ -671,8 +765,72 @@
       if(fromList){render();} else {abrir(id);}
     }
 
-    function voltar(){document.getElementById('view-detalhe').classList.add('hidden');document.getElementById('view-lista').classList.remove('hidden');document.getElementById('crumb').innerHTML='Atendimento <span>/ Central de Chamados</span>';render();window.scrollTo(0,0);}
-    function irLista(e){if(e)e.preventDefault();voltar();}
+    function hideAll(){['view-lista','view-detalhe','view-kb','view-artigo'].forEach(v=>{const e=document.getElementById(v);if(e)e.classList.add('hidden');});}
+    function setNav(id){['nav-chamados','nav-kb'].forEach(n=>{const e=document.getElementById(n);if(e)e.classList.toggle('active',n===id);});}
+    function irChamados(e){if(e)e.preventDefault();hideAll();document.getElementById('view-lista').classList.remove('hidden');setNav('nav-chamados');document.getElementById('crumb').innerHTML='Atendimento <span>/ Central de Chamados</span>';render();window.scrollTo(0,0);}
+    function voltar(){irChamados();}
+    function irLista(e){if(e)e.preventDefault();irChamados();}
+
+    // ===================== Base de Conhecimento =====================
+    function irKB(e){if(e)e.preventDefault();hideAll();document.getElementById('view-kb').classList.remove('hidden');setNav('nav-kb');document.getElementById('crumb').innerHTML='Atendimento <span>/ Base de Conhecimento</span>';renderKB();window.scrollTo(0,0);}
+    function kbLimpar(){state.kbCat='';const b=document.getElementById('kb-busca');if(b)b.value='';renderKB();}
+    function kbCat(nome){state.kbCat=(state.kbCat===nome?'':nome);renderKB();}
+    function renderKB(){
+      const busca=(val('kb-busca')||'').toLowerCase();
+      document.getElementById('kb-cats').innerHTML=KBCATS.map(c=>{
+        const n=artigos.filter(a=>a.categoria===c.nome).length;
+        return `<button class="kb-cat ${state.kbCat===c.nome?'sel':''}" onclick="kbCat('${c.nome}')"><div class="ci"><i data-lucide="${c.ic}"></i></div><h4>${c.nome}</h4><p>${c.desc}</p><span class="n">${n} artigo(s)</span></button>`;
+      }).join('');
+      let list=artigos.filter(a=>!state.kbCat||a.categoria===state.kbCat).filter(a=>!busca||(a.titulo+' '+a.categoria+' '+a.resumo).toLowerCase().includes(busca));
+      document.getElementById('kb-count').textContent=`${list.length} artigo(s)${state.kbCat?' · '+state.kbCat:''}`;
+      const el=document.getElementById('kb-list');
+      if(!list.length){el.innerHTML=`<div class="empty"><i data-lucide="file-search"></i><p>Nenhum artigo encontrado.</p></div>`;}
+      else{el.innerHTML=list.map(a=>`
+        <div class="art-row" onclick="abrirArtigo(${a.id})">
+          <div class="ai"><i data-lucide="file-text"></i></div>
+          <div style="flex:1;min-width:0">
+            <h4>${a.titulo}</h4>
+            <p>${a.resumo}</p>
+            <div class="am"><span class="badge b-azul">${a.categoria}</span>${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>· ${a.leitura} de leitura</span><span>· ${a.views} visualizações</span><span>· atualizado ${a.atualizado}</span></div>
+          </div>
+          <i data-lucide="chevron-right" style="color:var(--slate-300)"></i>
+        </div>`).join('');}
+      icons();
+    }
+    function abrirArtigo(id){
+      const a=artigos.find(x=>x.id===id);if(!a)return;state.artigoId=id;
+      hideAll();setNav('nav-kb');
+      document.getElementById('crumb').innerHTML=`Atendimento <span>/ Base de Conhecimento / ${a.titulo}</span>`;
+      const v=document.getElementById('view-artigo');
+      v.innerHTML=`
+        <div style="margin-bottom:14px"><button class="btn sec sm" onclick="irKB()"><i data-lucide="arrow-left"></i> Voltar para a base</button></div>
+        <article class="art-read">
+          <span class="badge b-azul">${a.categoria}</span>
+          <h1>${a.titulo}</h1>
+          <div class="am">${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>${a.leitura} de leitura</span><span>${a.views} visualizações</span><span>atualizado ${a.atualizado}</span></div>
+          <div class="ct">${a.conteudo}</div>
+          <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--slate-100);padding-top:16px">
+            <button class="btn sec sm" onclick="naoDisponivel(event)"><i data-lucide="pencil"></i> Editar</button>
+            <button class="btn sec sm" onclick="toast('Link do artigo copiado.')"><i data-lucide="link"></i> Copiar link</button>
+            <button class="btn ghost sm" onclick="toast('Inserir no chamado (protótipo).')"><i data-lucide="corner-up-left"></i> Usar em resposta</button>
+          </div>
+        </article>`;
+      v.classList.remove('hidden');window.scrollTo(0,0);icons();
+    }
+    function novoArtigo(){document.getElementById('overlay-art').classList.add('open');icons();}
+    function fecharArtigo(){document.getElementById('overlay-art').classList.remove('open');}
+    function salvarArtigo(){
+      const titulo=document.getElementById('a-titulo').value.trim();
+      if(!titulo){toast('Informe o título do artigo.');return;}
+      const categoria=document.getElementById('a-categoria').value;
+      const status=document.getElementById('a-status').value;
+      const resumo=document.getElementById('a-resumo').value.trim()||'(sem resumo)';
+      const conteudo=document.getElementById('a-conteudo').value.trim();
+      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'3 min',status,views:0,atualizado:'agora',conteudo:conteudo?('<p>'+conteudo.replace(/</g,'&lt;')+'</p>'):'<p>(conteúdo a definir)</p>'});
+      fecharArtigo();state.kbCat='';renderKB();
+      toast('Artigo '+(status==='publicado'?'publicado':'salvo como rascunho')+'.');
+      document.getElementById('a-titulo').value='';document.getElementById('a-resumo').value='';document.getElementById('a-conteudo').value='';
+    }
 
     // ===================== Novo chamado =====================
     function abrirNovo(){document.getElementById('overlay').classList.add('open');icons();}
