@@ -102,6 +102,8 @@
     .fsearch input:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.12);}
     select.f{height:34px;border:1px solid var(--slate-200);border-radius:8px;padding:0 28px 0 10px;font-size:13px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 8px center;appearance:none;color:var(--slate-700);outline:none;}
     select.f:focus{border-color:var(--azul-500);}
+    input.f{height:34px;width:100%;border:1px solid var(--slate-200);border-radius:8px;padding:0 10px;font-size:13px;color:var(--slate-700);outline:none;background:#fff;font-family:inherit;}
+    input.f:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.12);}
     .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--slate-600);font-weight:500;user-select:none;}
     .chk input{width:15px;height:15px;accent-color:var(--azul-600);}
     .fcount{background:var(--azul-600);color:#fff;border-radius:999px;font-size:11px;font-weight:800;padding:0 6px;min-width:18px;height:18px;display:inline-grid;place-items:center;}
@@ -357,6 +359,10 @@
                     <option value="7">Últimos 7 dias</option>
                     <option value="30">Últimos 30 dias</option>
                   </select></div>
+                <div class="fg"><label>Data inicial</label>
+                  <input type="date" class="f" id="f-data-ini" onchange="render()" /></div>
+                <div class="fg"><label>Data final</label>
+                  <input type="date" class="f" id="f-data-fim" onchange="render()" /></div>
                 <div class="fg"><label>Bairro/Distrito</label>
                   <select class="f" id="f-bairro" onchange="render()"><option value="">Bairro: todos</option></select></div>
                 <div class="fg"><label>Atribuição</label>
@@ -498,7 +504,7 @@
     ];
 
     const MIN={'CH-2026-000184':18,'CH-2026-000183':42,'CH-2026-000179':1200,'CH-2026-000176':120,'CH-2026-000175':180,'CH-2026-000171':300,'CH-2026-000168':360,'CH-2026-000160':420};
-    chamados.forEach(c=>{c.min=MIN[c.protocolo]??1;});
+    chamados.forEach(c=>{c.min=MIN[c.protocolo]??1;c.data=new Date(Date.now()-c.min*60000);});
     const BAIRROS=['Pituba','Itapuã','Valéria','Brotas','Cajazeiras'];
     const CATS={cidadao:['Dúvida sobre licenciamento','Problema no DAM/pagamento','Documentação','Acesso ao portal','Renovação de alvará'],interno:['Erro no sistema','Solicitação de acesso','Lentidão','Dúvida de uso']};
 
@@ -543,7 +549,7 @@
       if(ba)ba.innerHTML='<option value="">Bairro: todos</option>'+BAIRROS.map(b=>`<option value="${b}">${b}</option>`).join('');
     }
     function toggleAdv(){document.getElementById('adv').classList.toggle('hidden');}
-    function limparFiltros(){['f-busca','f-status','f-prioridade','f-categoria','f-sla','f-atendente','f-periodo','f-bairro'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const na=document.getElementById('f-naoatrib');if(na)na.checked=false;render();}
+    function limparFiltros(){['f-busca','f-status','f-prioridade','f-categoria','f-sla','f-atendente','f-periodo','f-bairro','f-data-ini','f-data-fim'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const na=document.getElementById('f-naoatrib');if(na)na.checked=false;render();}
     function removerChip(id){const el=document.getElementById(id);if(!el)return;if(el.type==='checkbox')el.checked=false;else el.value='';render();}
     function filtrosAtivos(){
       const arr=[];const add=(id,label,fmt)=>{const v=val(id);if(v)arr.push({id,label,txt:fmt?fmt(v):v});};
@@ -555,6 +561,8 @@
       add('f-atendente','Atendente',v=>v==='__sem'?'Sem atendente':v);
       add('f-periodo','Criado em',v=>v==='hoje'?'Hoje':('Últimos '+v+' dias'));
       add('f-bairro','Bairro');
+      add('f-data-ini','De',v=>v.split('-').reverse().join('/'));
+      add('f-data-fim','Até',v=>v.split('-').reverse().join('/'));
       const na=document.getElementById('f-naoatrib');if(na&&na.checked)arr.push({id:'f-naoatrib',label:'',txt:'Só não atribuídos'});
       return arr;
     }
@@ -571,6 +579,8 @@
     function filtrados(){
       const busca=(val('f-busca')||'').toLowerCase();
       const st=val('f-status'),pr=val('f-prioridade'),cat=val('f-categoria'),sla=val('f-sla'),at=val('f-atendente'),per=val('f-periodo'),ba=val('f-bairro');
+      const di=val('f-data-ini'),dfim=val('f-data-fim');
+      const dIni=di?new Date(di+'T00:00:00'):null, dFim=dfim?new Date(dfim+'T23:59:59'):null;
       const na=document.getElementById('f-naoatrib').checked;
       const ord=val('f-ordenar')||'recentes';
       const prioOrder={urgente:0,alta:1,media:2,baixa:3};
@@ -584,6 +594,8 @@
         .filter(c=>!at||(at==='__sem'?!c.atendente:c.atendente===at))
         .filter(c=>!ba||c.bairro===ba)
         .filter(c=>!per||(per==='hoje'?c.min<1440:per==='7'?c.min<10080:c.min<43200))
+        .filter(c=>!dIni||(c.data&&c.data>=dIni))
+        .filter(c=>!dFim||(c.data&&c.data<=dFim))
         .filter(c=>!na||!c.atendente);
       list.sort((a,b)=>{
         if(ord==='antigos')return b.min-a.min;
@@ -841,7 +853,7 @@
       const prioridade=document.getElementById('n-prioridade').value;
       const categoria=document.getElementById('n-categoria').value;
       const descricao=document.getElementById('n-descricao').value.trim()||'(sem descrição)';
-      const novo={id:Date.now(),protocolo:'CH-2026-000'+(190+chamados.filter(c=>c.tipo==='interno').length),tipo:'interno',assunto,solicitante:'Bruno Almeida',documento:'Matrícula 11920',contato:'bruno.almeida@sms.salvador.ba.gov.br',categoria,prioridade,status:'aberto',sla:'no_prazo',atendente:null,atualizado:'agora',bairro:'—',vinculo:null,min:0,
+      const novo={id:Date.now(),protocolo:'CH-2026-000'+(190+chamados.filter(c=>c.tipo==='interno').length),tipo:'interno',assunto,solicitante:'Bruno Almeida',documento:'Matrícula 11920',contato:'bruno.almeida@sms.salvador.ba.gov.br',categoria,prioridade,status:'aberto',sla:'no_prazo',atendente:null,atualizado:'agora',bairro:'—',vinculo:null,min:0,data:new Date(),
         mensagens:[{papel:'cidadao',nome:'Bruno Almeida',data:'agora',texto:descricao}]};
       chamados.unshift(novo);
       fecharNovo();
