@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
       --azul-50:#f0f7ff; --azul-100:#e0efff; --azul-200:#b8dbff; --azul-400:#4ca3fa;
@@ -118,6 +120,14 @@
     .chip button svg{width:12px;height:12px;}
     @media(max-width:1024px){.filters-adv{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:640px){.filters-adv{grid-template-columns:1fr;}}
+
+    /* ---------- Exportar ---------- */
+    .exp-wrap{position:relative;}
+    .exp-menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--slate-200);border-radius:10px;box-shadow:0 16px 40px rgba(15,23,42,.14);padding:6px;min-width:184px;z-index:30;}
+    .exp-menu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:9px 10px;border-radius:8px;font-size:13px;color:var(--slate-700);font-weight:500;text-align:left;}
+    .exp-menu button:hover{background:var(--slate-50);color:var(--azul-700);}
+    .exp-menu button svg{width:16px;height:16px;color:var(--slate-400);}
+    .exp-menu button:hover svg{color:var(--azul-600);}
 
     /* ---------- Table ---------- */
     table{width:100%;border-collapse:collapse;}
@@ -324,7 +334,16 @@
               <h1>Central de Chamados</h1>
               <p>Fila de atendimento da equipe — chamados do cidadão e chamados internos do Painel VISA.</p>
             </div>
-            <button class="btn" onclick="abrirNovo()"><i data-lucide="plus"></i> Novo chamado</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div class="exp-wrap">
+                <button class="btn sec" onclick="toggleExp(event)"><i data-lucide="download"></i> Exportar</button>
+                <div class="exp-menu hidden" id="exp-menu">
+                  <button onclick="exportarCSV()"><i data-lucide="file-spreadsheet"></i> Excel (.csv)</button>
+                  <button onclick="exportarPDF()"><i data-lucide="file-text"></i> PDF</button>
+                </div>
+              </div>
+              <button class="btn" onclick="abrirNovo()"><i data-lucide="plus"></i> Novo chamado</button>
+            </div>
           </div>
 
           <div class="metrics" id="metrics"></div>
@@ -716,6 +735,44 @@
       document.getElementById('foot-count').textContent=`${rows.length} chamado(s)`;
       renderChipsCount();
       icons();
+    }
+
+    // ===================== Exportação =====================
+    function toggleExp(e){if(e)e.stopPropagation();const m=document.getElementById('exp-menu');if(m)m.classList.toggle('hidden');}
+    function fecharExp(){const m=document.getElementById('exp-menu');if(m)m.classList.add('hidden');}
+    document.addEventListener('click',e=>{if(!e.target.closest('.exp-wrap'))fecharExp();});
+    function hojeStr(){return new Date().toISOString().slice(0,10);}
+    function baixar(blob,nome){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
+    const EXP_HEAD=['Protocolo','Tipo','Assunto','Solicitante','Documento','Categoria','Prioridade','Status','SLA','Atendente','Bairro','Atualizado'];
+    function exportRow(c){return [c.protocolo,c.tipo==='cidadao'?'Cidadão':'Interno',c.assunto,c.solicitante,c.documento,c.categoria,PRIO[c.prioridade].lbl,STATUS[c.status].lbl,SLA[c.sla].lbl,c.atendente||'—',c.bairro,c.atualizado];}
+    function exportarCSV(){
+      fecharExp();
+      const rows=filtrados();
+      const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+      const csv='\ufeff'+[EXP_HEAD.map(esc).join(';'),...rows.map(c=>exportRow(c).map(esc).join(';'))].join('\r\n');
+      baixar(new Blob([csv],{type:'text/csv;charset=utf-8;'}),`chamados-${state.tab}-${hojeStr()}.csv`);
+      toast(rows.length+' chamado(s) exportado(s) para Excel.');
+    }
+    function exportarPDF(){
+      fecharExp();
+      const rows=filtrados();
+      if(!(window.jspdf&&window.jspdf.jsPDF)){toast('Gerador de PDF ainda carregando, tente novamente.');return;}
+      const {jsPDF}=window.jspdf;
+      const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+      doc.setFontSize(14);doc.setTextColor(0,92,169);doc.text('SIGVISA — Central de Chamados',40,40);
+      doc.setFontSize(9);doc.setTextColor(100,116,139);
+      doc.text(`${state.tab==='cidadao'?'Chamados do cidadão':'Chamados internos (TI)'} · ${rows.length} registro(s) · ${new Date().toLocaleString('pt-BR')}`,40,56);
+      doc.autoTable({
+        startY:70,
+        head:[['Protocolo','Assunto','Solicitante','Categoria','Prioridade','Status','SLA','Atendente']],
+        body:rows.map(c=>[c.protocolo,c.assunto,c.solicitante,c.categoria,PRIO[c.prioridade].lbl,STATUS[c.status].lbl,SLA[c.sla].lbl,c.atendente||'—']),
+        styles:{fontSize:8,cellPadding:4,overflow:'linebreak'},
+        headStyles:{fillColor:[0,92,169],textColor:255},
+        alternateRowStyles:{fillColor:[240,247,255]},
+        margin:{left:40,right:40},
+      });
+      doc.save(`chamados-${state.tab}-${hojeStr()}.pdf`);
+      toast(rows.length+' chamado(s) exportado(s) para PDF.');
     }
 
     // ===================== Detalhe =====================
