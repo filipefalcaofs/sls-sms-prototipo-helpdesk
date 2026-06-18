@@ -379,7 +379,7 @@
       </div>
       <nav class="nav">
         <div class="grp">Operação</div>
-        <a href="#" id="nav-dashboard" class="active" onclick="irDashboard(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="#" id="nav-dashboard" class="active" onclick="irDashboard(event)"><i data-lucide="layout-dashboard"></i> Painel de Atendimento</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="building-2"></i> Estabelecimentos</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="file-text"></i> Solicitações</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="badge-check"></i> Alvarás e DAM</a>
@@ -1021,7 +1021,7 @@
     function irChamados(e){if(e)e.preventDefault();hideAll();document.getElementById('view-lista').classList.remove('hidden');setNav('nav-chamados');document.getElementById('crumb').innerHTML='Atendimento <span>/ Central de Chamados</span>';render();window.scrollTo(0,0);}
     function voltar(){irChamados();}
     function irLista(e){if(e)e.preventDefault();irChamados();}
-    function irDashboard(e){if(e)e.preventDefault();hideAll();document.getElementById('view-dashboard').classList.remove('hidden');setNav('nav-dashboard');document.getElementById('crumb').innerHTML='Operação <span>/ Dashboard</span>';renderDashboard();window.scrollTo(0,0);}
+    function irDashboard(e){if(e)e.preventDefault();hideAll();document.getElementById('view-dashboard').classList.remove('hidden');setNav('nav-dashboard');document.getElementById('crumb').innerHTML='Operação <span>/ Painel de Atendimento</span>';renderDashboard();window.scrollTo(0,0);}
     function kpiHtml(k){return `<div class="kpi"><div class="t">${k.t}</div><div class="v" style="${k.cls}">${k.v}</div><div class="d muted">${k.d}</div></div>`;}
     const dashF={periodo:'todos',ini:'',fim:'',tipo:'',distrito:'',atendente:'',prioridade:''};
     function distritoDe(b){const d=DISTRITOS.find(x=>x.bairro===b);return d?d.distrito.replace('Distrito Sanitário ','').replace(/^de /,''):'Não informado';}
@@ -1066,7 +1066,7 @@
           <span class="df-count">${all.length} de ${chamados.length} chamado(s)</span>
         </div>`;
       document.getElementById('view-dashboard').innerHTML=`
-        <div class="page-head"><div><h1>Dashboard</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
+        <div class="page-head"><div><h1>Painel de Atendimento</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
         ${filtrosHtml}
         ${all.length===0?`<div class="panel" style="padding:28px;text-align:center;color:var(--slate-500)"><i data-lucide="filter-x" style="width:26px;height:26px"></i><div style="margin-top:8px">Nenhum chamado para os filtros selecionados. Ajuste os filtros ou clique em <strong>Limpar</strong>.</div></div>`:`
         <div class="dash-grid">${kpis.slice(0,4).map(kpiHtml).join('')}</div>
