@@ -3,14 +3,83 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SIGVISA · Protótipo Central de Chamados</title>
-  <meta http-equiv="refresh" content="0; url=helpdesk-completo.html" />
+  <title>SIGVISA · Protótipo da Central de Chamados</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body{margin:0;height:100vh;display:grid;place-items:center;background:#0b1520;color:#cdd9ea;font-family:"Inter",-apple-system,system-ui,sans-serif;}
-    a{color:#4ca3fa;font-weight:600;}
+    :root{--azul-500:#1a82e0;--azul-600:#005ca9;--azul-700:#004a8a;--azul-900:#00335e;--slate-200:#e2e8f0;--slate-400:#94a3b8;--slate-500:#64748b;--slate-600:#475569;--slate-900:#0f172a;}
+    *{box-sizing:border-box;}
+    body{margin:0;min-height:100vh;font-family:"Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--slate-900);
+      background:radial-gradient(circle at 85% 8%, rgba(0,92,169,.10), transparent 34%), linear-gradient(135deg,#f8fafc,#eef5fb 72%);}
+    .wrap{max-width:1060px;margin:0 auto;padding:48px 20px 60px;}
+    .top{display:flex;align-items:center;gap:12px;margin-bottom:42px;}
+    .mark{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(135deg,var(--azul-500),var(--azul-700));box-shadow:0 14px 30px rgba(0,92,169,.28);}
+    .top strong{display:block;font-size:17px;letter-spacing:-.01em;}
+    .top span{display:block;font-size:12px;color:var(--slate-500);}
+    .pill{margin-left:auto;border:1px solid rgba(0,92,169,.18);background:#e0efff;color:var(--azul-700);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:800;}
+    .eyebrow{color:var(--azul-700);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+    h1{font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.03em;margin:8px 0 12px;}
+    .lead{max-width:64ch;color:var(--slate-600);font-size:17px;margin:0 0 30px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+    .card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--slate-200);border-radius:20px;padding:24px;text-decoration:none;color:inherit;box-shadow:0 18px 44px rgba(15,23,42,.07);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
+    .card:hover{transform:translateY(-3px);border-color:rgba(0,92,169,.32);box-shadow:0 26px 60px rgba(0,92,169,.13);}
+    .ic{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;background:var(--azul-600);box-shadow:0 12px 28px rgba(0,92,169,.22);}
+    .ic.alt{background:linear-gradient(135deg,#1a82e0,#00335e);}
+    .card h2{font-size:24px;margin:18px 0 8px;letter-spacing:-.02em;}
+    .card p{margin:0;color:var(--slate-600);font-size:14px;}
+    .feat{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:8px;font-size:13px;color:var(--slate-600);}
+    .feat li{display:flex;gap:8px;align-items:baseline;}
+    .feat li::before{content:"";width:7px;height:7px;flex:0 0 auto;border-radius:999px;background:var(--azul-600);transform:translateY(-1px);}
+    .go{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;margin-top:22px;border-radius:12px;padding:11px 16px;background:var(--azul-600);color:#fff;font-weight:800;font-size:14px;}
+    .go svg{width:18px;height:18px;}
+    .note{margin-top:26px;color:var(--slate-500);font-size:13px;display:flex;gap:8px;align-items:center;}
+    .note svg{width:16px;height:16px;color:var(--azul-600);}
+    @media(max-width:760px){.grid{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-  <p>Abrindo o protótipo da Central de Chamados… Se não abrir, <a href="helpdesk-completo.html">clique aqui</a>.</p>
+  <main class="wrap">
+    <header class="top">
+      <div class="mark">SV</div>
+      <div><strong>SIGVISA</strong><span>Vigilância Sanitária de Salvador · DVIS/SMS</span></div>
+      <span class="pill">Protótipo navegável</span>
+    </header>
+
+    <div class="eyebrow">Central de Chamados + Assistente</div>
+    <h1>Escolha por onde começar</h1>
+    <p class="lead">Protótipo de validação do módulo de Help Desk do SIGVISA. Explore os dois ambientes — o atendimento da equipe e a experiência do cidadão. Dados fictícios, navegável de ponta a ponta.</p>
+
+    <section class="grid">
+      <a class="card" href="helpdesk-completo.html">
+        <div class="ic"><i data-lucide="headphones"></i></div>
+        <h2>Painel VISA (equipe)</h2>
+        <p>Visão do atendente e do Suporte de TI.</p>
+        <ul class="feat">
+          <li>Dashboard com indicadores e SLA</li>
+          <li>Fila de chamados com filtros avançados e exportação</li>
+          <li>Detalhe com conversa, notas internas e IA que gera artigo</li>
+          <li>Base de Conhecimento com visibilidade por público</li>
+          <li>Assistente com conhecimento do sistema</li>
+        </ul>
+        <span class="go">Abrir Painel VISA <i data-lucide="arrow-right"></i></span>
+      </a>
+
+      <a class="card" href="helpdesk-completo.html?view=portal">
+        <div class="ic alt"><i data-lucide="users"></i></div>
+        <h2>Portal do Cidadão</h2>
+        <p>Visão externa, como o cidadão vê.</p>
+        <ul class="feat">
+          <li>Central de Ajuda (busca e artigos)</li>
+          <li>Meus chamados: abrir, acompanhar e avaliar</li>
+          <li>Abrir chamado sem login (recuperação de acesso)</li>
+          <li>Assistente do cidadão com privacidade (LGPD)</li>
+        </ul>
+        <span class="go">Abrir Portal do Cidadão <i data-lucide="arrow-right"></i></span>
+      </a>
+    </section>
+
+    <p class="note"><i data-lucide="info"></i> Protótipo com dados fictícios. O assistente (chatbot) está disponível dentro dos dois ambientes, no canto inferior direito.</p>
+  </main>
+  <script>if(window.lucide)lucide.createIcons();</script>
 </body>
 </html>

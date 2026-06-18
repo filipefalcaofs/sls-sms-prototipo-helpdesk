@@ -250,7 +250,7 @@
     .p-card{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);overflow:hidden;}
     .helpful{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px;padding-top:16px;border-top:1px solid var(--slate-100);}
     .p-foot{text-align:center;color:var(--slate-400);font-size:12px;padding:22px;border-top:1px solid var(--slate-200);background:#fff;}
-    @media(max-width:640px){.p-nav a{display:none;}}
+    @media(max-width:640px){.p-header{flex-wrap:wrap;gap:10px}.p-nav{gap:12px;flex-wrap:wrap}.p-nav a{font-size:13px}}
 
     /* ---------- Modal ---------- */
     .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
@@ -311,6 +311,33 @@
     @keyframes cbblink{0%,60%,100%{opacity:.3}30%{opacity:1}}
     @media(max-width:480px){.cbot{right:8px;bottom:8px;height:calc(100vh - 16px);}}
 
+    /* ---------- Dashboard ---------- */
+    .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .dash-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .kpi{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);padding:16px;}
+    .kpi .t{font-size:12px;color:var(--slate-500);font-weight:600;}
+    .kpi .v{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:6px;}
+    .kpi .d{font-size:12px;margin-top:2px;}
+    .bar-row{display:flex;align-items:center;gap:10px;margin:9px 0;}
+    .bar-row .bl{width:140px;font-size:12px;color:var(--slate-600);flex:0 0 auto;text-align:right;}
+    .bar-row .bt{flex:1;height:12px;background:var(--slate-100);border-radius:999px;overflow:hidden;}
+    .bar-row .bf{height:100%;border-radius:999px;background:var(--azul-500);}
+    .bar-row .bv{width:30px;text-align:right;font-size:12px;font-weight:700;color:var(--slate-700);}
+    .cols{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:8px;}
+    .cols .c{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;}
+    .cols .cb{width:72%;background:linear-gradient(180deg,var(--azul-400),var(--azul-600));border-radius:6px 6px 0 0;min-height:4px;}
+    .cols .cl{font-size:11px;color:var(--slate-400);}
+    @media(max-width:1024px){.dash-grid{grid-template-columns:repeat(2,1fr);}.dash-2{grid-template-columns:1fr;}}
+
+    /* ---------- Mobile ---------- */
+    @media(max-width:640px){
+      .content{padding:14px;}
+      .page-head{flex-direction:column;align-items:stretch;gap:10px;}
+      .p-hero{padding:34px 16px;}
+      .p-hero h1{font-size:24px;}
+      .cbot-fab{right:14px;bottom:14px;}
+    }
+
     .hidden{display:none !important;}
 
     @media (max-width:1024px){
@@ -333,7 +360,7 @@
       </div>
       <nav class="nav">
         <div class="grp">Operação</div>
-        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="#" id="nav-dashboard" onclick="irDashboard(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="building-2"></i> Estabelecimentos</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="file-text"></i> Solicitações</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="badge-check"></i> Alvarás e DAM</a>
@@ -468,6 +495,9 @@
             <div class="tbl-foot"><span id="foot-count">0 chamados</span><span>Protótipo navegável · dados fictícios</span></div>
           </div>
         </section>
+
+        <!-- ====== DASHBOARD ====== -->
+        <section id="view-dashboard" class="hidden"></section>
 
         <!-- ====== DETALHE ====== -->
         <section id="view-detalhe" class="hidden"></section>
@@ -967,11 +997,37 @@
       if(fromList){render();} else {abrir(id);}
     }
 
-    function hideAll(){['view-lista','view-detalhe','view-kb','view-artigo'].forEach(v=>{const e=document.getElementById(v);if(e)e.classList.add('hidden');});}
-    function setNav(id){['nav-chamados','nav-kb'].forEach(n=>{const e=document.getElementById(n);if(e)e.classList.toggle('active',n===id);});}
+    function hideAll(){['view-lista','view-detalhe','view-kb','view-artigo','view-dashboard'].forEach(v=>{const e=document.getElementById(v);if(e)e.classList.add('hidden');});}
+    function setNav(id){['nav-chamados','nav-kb','nav-dashboard'].forEach(n=>{const e=document.getElementById(n);if(e)e.classList.toggle('active',n===id);});}
     function irChamados(e){if(e)e.preventDefault();hideAll();document.getElementById('view-lista').classList.remove('hidden');setNav('nav-chamados');document.getElementById('crumb').innerHTML='Atendimento <span>/ Central de Chamados</span>';render();window.scrollTo(0,0);}
     function voltar(){irChamados();}
     function irLista(e){if(e)e.preventDefault();irChamados();}
+    function irDashboard(e){if(e)e.preventDefault();hideAll();document.getElementById('view-dashboard').classList.remove('hidden');setNav('nav-dashboard');document.getElementById('crumb').innerHTML='Operação <span>/ Dashboard</span>';renderDashboard();window.scrollTo(0,0);}
+    function renderDashboard(){
+      const all=chamados;const cnt=s=>all.filter(c=>c.status===s).length;
+      const kpis=[
+        {t:'Abertos',v:cnt('aberto'),d:'aguardando triagem',cls:'color:var(--sky-700)'},
+        {t:'Em atendimento',v:cnt('em_atendimento'),d:'com responsável',cls:'color:var(--azul-700)'},
+        {t:'Aguardando cidadão',v:cnt('aguardando_cidadao'),d:'resposta pendente',cls:'color:var(--amber-700)'},
+        {t:'SLA violado',v:all.filter(c=>c.sla==='violado').length,d:'requer atenção',cls:'color:var(--rose-700)'},
+      ];
+      const sk=Object.keys(STATUS);const maxS=Math.max(1,...sk.map(k=>cnt(k)));
+      const bars=sk.map(k=>{const n=cnt(k);return `<div class="bar-row"><span class="bl">${STATUS[k].lbl}</span><span class="bt"><span class="bf" style="width:${Math.round(n/maxS*100)}%"></span></span><span class="bv">${n}</span></div>`;}).join('');
+      const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];const serie=[5,8,6,9,7,3,2];const maxD=Math.max(...serie);
+      const cols=dias.map((d,i)=>`<div class="c"><div class="cb" style="height:${Math.round(serie[i]/maxD*120)}px"></div><div class="cl">${d}</div></div>`).join('');
+      document.getElementById('view-dashboard').innerHTML=`
+        <div class="page-head"><div><h1>Dashboard</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
+        <div class="dash-grid">${kpis.map(k=>`<div class="kpi"><div class="t">${k.t}</div><div class="v" style="${k.cls}">${k.v}</div><div class="d muted">${k.d}</div></div>`).join('')}</div>
+        <div class="dash-2">
+          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Chamados por status</h3>${bars}</div>
+          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Chamados nos últimos 7 dias</h3><div class="cols">${cols}</div></div>
+        </div>
+        <div class="dash-2" style="margin-top:16px">
+          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Satisfação média</h3><div style="font-size:34px;font-weight:800;color:var(--emerald-700)">4,6 <span style="font-size:14px;color:var(--slate-400);font-weight:600">/ 5</span></div><div class="muted" style="font-size:12px">com base em 128 avaliações</div></div>
+          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Tempo médio de 1ª resposta</h3><div style="font-size:34px;font-weight:800;color:var(--azul-700)">26 min</div><div class="muted" style="font-size:12px">meta: 1 hora</div></div>
+        </div>`;
+      icons();
+    }
 
     // ===================== Base de Conhecimento =====================
     function irKB(e){if(e)e.preventDefault();hideAll();document.getElementById('view-kb').classList.remove('hidden');setNav('nav-kb');document.getElementById('crumb').innerHTML='Atendimento <span>/ Base de Conhecimento</span>';renderKB();window.scrollTo(0,0);}
@@ -1163,7 +1219,7 @@
 
     // ===================== Portal: navegação e Meus Chamados =====================
     function setPnav(w){const a=document.getElementById('pnav-central');const b=document.getElementById('pnav-meus');if(a)a.classList.toggle('active',w==='central');if(b)b.classList.toggle('active',w!=='central');}
-    function renderPortal(){const v=state.portalView||'central';if(v==='meus')portalMeus();else if(v==='novo')portalNovoChamado();else if(v==='ver')portalVerChamado(state.portalChamadoId);else{setPnav('central');montarPortalCentral();}}
+    function renderPortal(){const v=state.portalView||'central';if(v==='meus')portalMeus();else if(v==='novo')portalNovoChamado();else if(v==='publico')portalNovoPublico();else if(v==='ver')portalVerChamado(state.portalChamadoId);else{setPnav('central');montarPortalCentral();}}
     function portalGo(e,view){if(e&&e.preventDefault)e.preventDefault();state.portalView=view;if(view==='central')state.portalCat='';renderPortal();window.scrollTo(0,0);}
     function portalMeus(){
       setPnav('meus');
@@ -1172,7 +1228,10 @@
         <div class="p-wrap" style="padding-top:24px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
             <div><h1 style="margin:0;font-size:22px">Meus chamados</h1><p style="margin:4px 0 0;color:var(--slate-500);font-size:13px">Acompanhe e responda suas solicitações de atendimento.</p></div>
-            <button class="btn" onclick="portalGo(null,'novo')"><i data-lucide="plus"></i> Abrir novo chamado</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn sec" onclick="portalGo(null,'publico')"><i data-lucide="key-round"></i> Chamado sem login</button>
+              <button class="btn" onclick="portalGo(null,'novo')"><i data-lucide="plus"></i> Abrir novo chamado</button>
+            </div>
           </div>
           ${meusChamados.length?`<div class="p-card">${cards}</div>`:`<div class="p-card" style="padding:40px;text-align:center;color:var(--slate-500)">Você ainda não tem chamados. Abra um novo para começar.</div>`}
         </div>`;
@@ -1205,6 +1264,37 @@
       meusChamados.unshift(novo);
       toast('Chamado '+novo.protocolo+' aberto com sucesso.');
       portalVerChamado(novo.id);
+    }
+    function portalNovoPublico(){
+      setPnav('meus');
+      document.getElementById('portal-body').innerHTML=`
+        <div class="p-wrap" style="padding-top:24px;max-width:760px">
+          <button class="btn sec sm" onclick="portalGo(null,'central')"><i data-lucide="arrow-left"></i> Voltar</button>
+          <div class="p-card" style="margin-top:14px;padding:22px">
+            <div style="display:flex;align-items:flex-start;gap:10px;background:var(--azul-50);border:1px solid var(--azul-200);border-radius:10px;padding:12px;margin-bottom:16px"><i data-lucide="key-round" style="color:var(--azul-600);width:18px;height:18px;flex:0 0 auto;margin-top:1px"></i><div style="font-size:13px;color:var(--slate-700)">Use este canal quando <strong>não conseguir acessar o portal</strong> (senha ou e-mail desatualizado). Como você não está autenticado, informe seus dados para retorno.</div></div>
+            <h1 style="margin:0 0 4px;font-size:20px">Abrir chamado sem login</h1>
+            <p style="margin:0 0 16px;color:var(--slate-500);font-size:13px">Responderemos pelo e-mail informado.</p>
+            <div class="grid2"><div class="field"><label>CPF/CNPJ</label><input class="inp" id="pp-doc" placeholder="000.000.000-00" /></div><div class="field"><label>E-mail para retorno</label><input class="inp" id="pp-email" placeholder="voce@email.com" /></div></div>
+            <div class="field" style="margin-top:12px"><label>Categoria</label><select class="inp" id="pp-cat"><option>Acesso ao portal</option><option>Problema no DAM/pagamento</option><option>Documentação</option><option>Dúvida sobre licenciamento</option></select></div>
+            <div class="field" style="margin-top:12px"><label>Assunto</label><input class="inp" id="pp-assunto" placeholder="Ex.: Não recebo o e-mail de recuperação" /></div>
+            <div class="field" style="margin-top:12px"><label>Descrição</label><textarea class="inp" id="pp-desc" rows="4" placeholder="Descreva o que está acontecendo."></textarea></div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px"><button class="btn sec" onclick="portalGo(null,'central')">Cancelar</button><button class="btn" onclick="portalEnviarPublico()"><i data-lucide="send"></i> Enviar chamado</button></div>
+          </div>
+        </div>`;
+      icons();
+    }
+    function portalEnviarPublico(){
+      const doc=(document.getElementById('pp-doc').value||'').trim();const email=(document.getElementById('pp-email').value||'').trim();const assunto=(document.getElementById('pp-assunto').value||'').trim();
+      if(!doc||!email||!assunto){toast('Preencha CPF/CNPJ, e-mail e assunto.');return;}
+      const proto='CH-2026-000'+(220+Math.floor(Math.random()*70));
+      document.getElementById('portal-body').innerHTML=`
+        <div class="p-wrap" style="padding-top:40px;max-width:620px;text-align:center">
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--emerald-100);color:var(--emerald-700);display:grid;place-items:center;margin:0 auto"><i data-lucide="check" style="width:30px;height:30px"></i></div>
+          <h1 style="margin:16px 0 6px;font-size:22px">Chamado registrado</h1>
+          <p style="color:var(--slate-600);font-size:14px">Seu chamado <strong>${proto}</strong> foi aberto. Como você não está autenticado, o acompanhamento e a resposta serão enviados para <strong>${email}</strong>.</p>
+          <div style="margin-top:18px"><button class="btn" onclick="portalGo(null,'central')"><i data-lucide="arrow-left"></i> Voltar à Central de Ajuda</button></div>
+        </div>`;
+      icons();toast('Chamado '+proto+' aberto. Retorno por e-mail.');
     }
     function portalVerChamado(id){
       setPnav('meus');state.portalView='ver';state.portalChamadoId=id;
