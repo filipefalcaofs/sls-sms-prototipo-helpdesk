@@ -1241,10 +1241,14 @@
       servidor:[
         {titulo:'Como funciona a dispensa de análise',data:'16/06/2026 · 14:30',msgs:[{who:'user',t:'Como funciona a dispensa de análise?'},{who:'bot',t:'Conforme a parametrização da VISA e o grau de risco, a solicitação pode ir direto para <strong>Liberada</strong> e o DAM é gerado sem análise manual.'}]},
         {titulo:'Andamento da VIS-2026-00188',data:'15/06/2026 · 09:12',msgs:[{who:'user',t:'Andamento da VIS-2026-00188'},{who:'bot',t:'<strong>VIS-2026-00188</strong> — Renovação de alvará · Clínica Mar Azul.<br><strong>Status:</strong> Liberada — DAM gerado, aguardando pagamento.'}]},
+        {titulo:'Quando o alvará é suspenso',data:'13/06/2026 · 11:20',msgs:[{who:'user',t:'Quando o alvará é suspenso?'},{who:'bot',t:'O alvará pode ser <strong>suspenso</strong> quando o estabelecimento fica sem RT (quando o CNAE exige) e o prazo de regularização expira.'}]},
+        {titulo:'A Farmácia Saúde Total está cadastrada?',data:'12/06/2026 · 08:45',msgs:[{who:'user',t:'A Farmácia Saúde Total está cadastrada?'},{who:'bot',t:'<strong>Farmácia Saúde Total</strong> — Estabelecimento · CNPJ 12.345.678/0001-90 · Pituba · Ativo.'}]},
       ],
       cidadao:[
         {titulo:'Como emitir a 2ª via do DAM',data:'16/06/2026 · 10:05',msgs:[{who:'user',t:'Como emitir a segunda via do DAM?'},{who:'bot',t:'O DAM é a guia para pagar as taxas. A <strong>segunda via</strong> fica no Portal, em "Meus alvarás/DAMs". Após o pagamento, a baixa é automática.'}]},
         {titulo:'Documentos para renovação',data:'14/06/2026 · 16:40',msgs:[{who:'user',t:'Quais documentos preciso para renovação?'},{who:'bot',t:'Envie em <strong>PDF, JPG ou PNG</strong>, até <strong>2 MB</strong> por arquivo. Se um PDF for recusado, verifique se não está protegido por senha.'}]},
+        {titulo:'O que é grau de risco',data:'13/06/2026 · 19:02',msgs:[{who:'user',t:'O que é grau de risco?'},{who:'bot',t:'O <strong>grau de risco</strong> classifica o estabelecimento em Baixo, Médio, Alto ou Muito Alto e define se há dispensa de análise e o documento final.'}]},
+        {titulo:'Qual distrito atende a Pituba',data:'11/06/2026 · 13:30',msgs:[{who:'user',t:'Qual distrito atende a Pituba?'},{who:'bot',t:'O bairro <strong>Pituba</strong> é atendido pelo <strong>Distrito Sanitário Boca do Rio</strong>.'}]},
       ],
     };
     const CHATKB=[
@@ -1349,9 +1353,18 @@
     function cbotNova(){cbot.savedHTML=null;document.getElementById('cbot-body').innerHTML='';cbot.iniciado=true;cbotBoasVindas(cbotContexto());toast('Nova conversa iniciada.');}
     function cbotHistorico(){
       if(cbot.savedHTML==null)cbot.savedHTML=document.getElementById('cbot-body').innerHTML;
-      const lista=CHAT_HIST[cbotContexto()]||[];
-      const itens=lista.length?lista.map((c,i)=>`<div class="cb-art" style="align-items:flex-start" onclick="cbotVerConversa(${i})"><i data-lucide="message-square"></i> <span><strong>${c.titulo}</strong><br><span style="color:var(--slate-500);font-weight:400">${c.data}</span></span></div>`).join(''):'<div style="color:var(--slate-500);font-size:13px">Nenhuma conversa anterior.</div>';
-      document.getElementById('cbot-body').innerHTML=`<div style="font-weight:700;color:var(--slate-700);margin-bottom:4px">Conversas anteriores</div>${itens}<div class="cb-chips" style="margin-top:10px"><button class="cb-chip" onclick="cbotVoltarChat()">← Voltar à conversa atual</button></div>`;
+      document.getElementById('cbot-body').innerHTML=`
+        <div style="font-weight:700;color:var(--slate-700);margin-bottom:8px">Conversas anteriores</div>
+        <div class="kb-srch" style="margin-bottom:10px"><i data-lucide="search"></i><input id="cbot-hist-busca" placeholder="Buscar no histórico..." oninput="cbotHistFiltrar()" style="height:36px;border:1px solid var(--slate-200);border-radius:9px;color:var(--slate-800)" /></div>
+        <div id="cbot-hist-list"></div>
+        <div class="cb-chips" style="margin-top:10px"><button class="cb-chip" onclick="cbotVoltarChat()">← Voltar à conversa atual</button></div>`;
+      cbotHistFiltrar();icons();
+    }
+    function cbotHistFiltrar(){
+      const inp=document.getElementById('cbot-hist-busca');const q=(inp?inp.value:'').toLowerCase();
+      const itens=(CHAT_HIST[cbotContexto()]||[]).map((c,i)=>({c,i})).filter(({c})=>!q||(c.titulo+' '+c.data+' '+c.msgs.map(m=>m.t).join(' ')).toLowerCase().includes(q));
+      const el=document.getElementById('cbot-hist-list');if(!el)return;
+      el.innerHTML=itens.length?itens.map(({c,i})=>`<div class="cb-art" style="align-items:flex-start" onclick="cbotVerConversa(${i})"><i data-lucide="message-square"></i> <span><strong>${c.titulo}</strong><br><span style="color:var(--slate-500);font-weight:400">${c.data}</span></span></div>`).join(''):'<div style="color:var(--slate-500);font-size:13px">Nenhuma conversa encontrada.</div>';
       icons();
     }
     function cbotVerConversa(i){
