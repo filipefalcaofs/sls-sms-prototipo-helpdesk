@@ -94,7 +94,8 @@
     .tab .cnt{background:var(--slate-100);color:var(--slate-600);border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px;}
     .tab.active .cnt{background:var(--azul-100);color:var(--azul-700);}
 
-    .filters{display:flex;align-items:center;gap:10px;padding:12px;flex-wrap:wrap;border-bottom:1px solid var(--slate-200);background:var(--slate-50);}
+    .filters{padding:12px;border-bottom:1px solid var(--slate-200);background:var(--slate-50);}
+    .fbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
     .fsearch{position:relative;flex:1;min-width:200px;}
     .fsearch svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--slate-400);}
     .fsearch input{width:100%;height:34px;border:1px solid var(--slate-200);border-radius:8px;padding:0 10px 0 30px;font-size:13px;outline:none;background:#fff;}
@@ -103,6 +104,18 @@
     select.f:focus{border-color:var(--azul-500);}
     .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--slate-600);font-weight:500;user-select:none;}
     .chk input{width:15px;height:15px;accent-color:var(--azul-600);}
+    .fcount{background:var(--azul-600);color:#fff;border-radius:999px;font-size:11px;font-weight:800;padding:0 6px;min-width:18px;height:18px;display:inline-grid;place-items:center;}
+    .filters-adv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--slate-200);}
+    .filters-adv .fg{display:flex;flex-direction:column;gap:5px;min-width:0;}
+    .filters-adv .fg>label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-400);font-weight:600;}
+    .filters-adv .fg select.f{width:100%;}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;}
+    .chip{display:inline-flex;align-items:center;gap:6px;background:var(--azul-50);color:var(--azul-700);border:1px solid var(--azul-200);border-radius:999px;padding:3px 6px 3px 11px;font-size:12px;font-weight:600;}
+    .chip button{border:0;background:transparent;color:var(--azul-700);display:grid;place-items:center;padding:2px;border-radius:50%;cursor:pointer;}
+    .chip button:hover{background:var(--azul-100);}
+    .chip button svg{width:12px;height:12px;}
+    @media(max-width:1024px){.filters-adv{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:640px){.filters-adv{grid-template-columns:1fr;}}
 
     /* ---------- Table ---------- */
     table{width:100%;border-collapse:collapse;}
@@ -261,29 +274,64 @@
             </div>
 
             <div class="filters">
-              <div class="fsearch"><i data-lucide="search"></i><input id="f-busca" placeholder="Protocolo, assunto ou solicitante..." oninput="render()" /></div>
-              <select class="f" id="f-status" onchange="render()">
-                <option value="">Status: todos</option>
-                <option value="aberto">Aberto</option>
-                <option value="em_atendimento">Em atendimento</option>
-                <option value="aguardando_cidadao">Aguardando cidadão</option>
-                <option value="resolvido">Resolvido</option>
-                <option value="fechado">Fechado</option>
-              </select>
-              <select class="f" id="f-prioridade" onchange="render()">
-                <option value="">Prioridade: todas</option>
-                <option value="baixa">Baixa</option>
-                <option value="media">Média</option>
-                <option value="alta">Alta</option>
-                <option value="urgente">Urgente</option>
-              </select>
-              <select class="f" id="f-atendente" onchange="render()">
-                <option value="">Atendente: todos</option>
-                <option value="Ana Paula Santana">Ana Paula Santana</option>
-                <option value="Bruno Almeida">Bruno Almeida</option>
-                <option value="__sem">Sem atendente</option>
-              </select>
-              <label class="chk"><input type="checkbox" id="f-naoatrib" onchange="render()" /> Só não atribuídos</label>
+              <div class="fbar">
+                <div class="fsearch"><i data-lucide="search"></i><input id="f-busca" placeholder="Protocolo, assunto ou solicitante..." oninput="render()" /></div>
+                <select class="f" id="f-ordenar" onchange="render()">
+                  <option value="recentes">Ordenar: mais recentes</option>
+                  <option value="antigos">Mais antigos</option>
+                  <option value="prioridade">Prioridade (maior primeiro)</option>
+                  <option value="sla">SLA mais crítico</option>
+                </select>
+                <button class="btn sec sm" onclick="toggleAdv()"><i data-lucide="sliders-horizontal"></i> Filtros avançados <span class="fcount hidden" id="fcount">0</span></button>
+                <button class="btn ghost sm" onclick="limparFiltros()"><i data-lucide="eraser"></i> Limpar</button>
+              </div>
+              <div class="filters-adv hidden" id="adv">
+                <div class="fg"><label>Status</label>
+                  <select class="f" id="f-status" onchange="render()">
+                    <option value="">Status: todos</option>
+                    <option value="aberto">Aberto</option>
+                    <option value="em_atendimento">Em atendimento</option>
+                    <option value="aguardando_cidadao">Aguardando cidadão</option>
+                    <option value="resolvido">Resolvido</option>
+                    <option value="fechado">Fechado</option>
+                  </select></div>
+                <div class="fg"><label>Prioridade</label>
+                  <select class="f" id="f-prioridade" onchange="render()">
+                    <option value="">Prioridade: todas</option>
+                    <option value="baixa">Baixa</option>
+                    <option value="media">Média</option>
+                    <option value="alta">Alta</option>
+                    <option value="urgente">Urgente</option>
+                  </select></div>
+                <div class="fg"><label>Categoria</label>
+                  <select class="f" id="f-categoria" onchange="render()"><option value="">Categoria: todas</option></select></div>
+                <div class="fg"><label>SLA</label>
+                  <select class="f" id="f-sla" onchange="render()">
+                    <option value="">SLA: qualquer</option>
+                    <option value="no_prazo">No prazo</option>
+                    <option value="vence">Vence em breve</option>
+                    <option value="violado">Violado</option>
+                  </select></div>
+                <div class="fg"><label>Atendente</label>
+                  <select class="f" id="f-atendente" onchange="render()">
+                    <option value="">Atendente: todos</option>
+                    <option value="Ana Paula Santana">Ana Paula Santana</option>
+                    <option value="Bruno Almeida">Bruno Almeida</option>
+                    <option value="__sem">Sem atendente</option>
+                  </select></div>
+                <div class="fg"><label>Criado em</label>
+                  <select class="f" id="f-periodo" onchange="render()">
+                    <option value="">Qualquer período</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="7">Últimos 7 dias</option>
+                    <option value="30">Últimos 30 dias</option>
+                  </select></div>
+                <div class="fg"><label>Bairro/Distrito</label>
+                  <select class="f" id="f-bairro" onchange="render()"><option value="">Bairro: todos</option></select></div>
+                <div class="fg"><label>Atribuição</label>
+                  <label class="chk" style="height:34px"><input type="checkbox" id="f-naoatrib" onchange="render()" /> Só não atribuídos</label></div>
+              </div>
+              <div class="chips hidden" id="chips"></div>
             </div>
 
             <div style="overflow-x:auto">
@@ -375,6 +423,11 @@
         mensagens:[{papel:'cidadao',nome:'Tatiane Rocha',data:'17/06/2026 02:00',texto:'Ao clicar em aprovar o cadastro de um estabelecimento, aparece erro 500 e a página não conclui a ação.',anexo:'tela-erro-500.png'}]},
     ];
 
+    const MIN={'CH-2026-000184':18,'CH-2026-000183':42,'CH-2026-000179':1200,'CH-2026-000176':120,'CH-2026-000175':180,'CH-2026-000171':300,'CH-2026-000168':360,'CH-2026-000160':420};
+    chamados.forEach(c=>{c.min=MIN[c.protocolo]??1;});
+    const BAIRROS=['Pituba','Itapuã','Valéria','Brotas','Cajazeiras'];
+    const CATS={cidadao:['Dúvida sobre licenciamento','Problema no DAM/pagamento','Documentação','Acesso ao portal','Renovação de alvará'],interno:['Erro no sistema','Solicitação de acesso','Lentidão','Dúvida de uso']};
+
     const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta'};
 
     // ===================== Helpers =====================
@@ -388,20 +441,64 @@
     function naoDisponivel(e){e.preventDefault();toast('Disponível no sistema completo — fora do escopo deste protótipo.');}
 
     // ===================== Lista =====================
-    function setTab(t){state.tab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));render();}
+    function setTab(t){state.tab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));popularDinamicos();render();}
+    function val(id){const e=document.getElementById(id);return e?e.value:'';}
+    function popularDinamicos(){
+      const cat=document.getElementById('f-categoria');
+      if(cat)cat.innerHTML='<option value="">Categoria: todas</option>'+CATS[state.tab].map(c=>`<option value="${c}">${c}</option>`).join('');
+      const ba=document.getElementById('f-bairro');
+      if(ba)ba.innerHTML='<option value="">Bairro: todos</option>'+BAIRROS.map(b=>`<option value="${b}">${b}</option>`).join('');
+    }
+    function toggleAdv(){document.getElementById('adv').classList.toggle('hidden');}
+    function limparFiltros(){['f-busca','f-status','f-prioridade','f-categoria','f-sla','f-atendente','f-periodo','f-bairro'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const na=document.getElementById('f-naoatrib');if(na)na.checked=false;render();}
+    function removerChip(id){const el=document.getElementById(id);if(!el)return;if(el.type==='checkbox')el.checked=false;else el.value='';render();}
+    function filtrosAtivos(){
+      const arr=[];const add=(id,label,fmt)=>{const v=val(id);if(v)arr.push({id,label,txt:fmt?fmt(v):v});};
+      add('f-busca','Busca');
+      add('f-status','Status',v=>STATUS[v]?.lbl||v);
+      add('f-prioridade','Prioridade',v=>PRIO[v]?.lbl||v);
+      add('f-categoria','Categoria');
+      add('f-sla','SLA',v=>SLA[v]?.lbl||v);
+      add('f-atendente','Atendente',v=>v==='__sem'?'Sem atendente':v);
+      add('f-periodo','Criado em',v=>v==='hoje'?'Hoje':('Últimos '+v+' dias'));
+      add('f-bairro','Bairro');
+      const na=document.getElementById('f-naoatrib');if(na&&na.checked)arr.push({id:'f-naoatrib',label:'',txt:'Só não atribuídos'});
+      return arr;
+    }
+    function renderChipsCount(){
+      const ativos=filtrosAtivos();
+      const fc=document.getElementById('fcount');
+      if(fc){if(ativos.length){fc.textContent=ativos.length;fc.classList.remove('hidden');}else fc.classList.add('hidden');}
+      const ch=document.getElementById('chips');if(!ch)return;
+      if(!ativos.length){ch.classList.add('hidden');ch.innerHTML='';return;}
+      ch.classList.remove('hidden');
+      ch.innerHTML=ativos.map(a=>`<span class="chip">${a.label?a.label+': ':''}${a.txt}<button onclick="removerChip('${a.id}')" aria-label="Remover filtro"><i data-lucide="x"></i></button></span>`).join('')+`<button class="btn ghost sm" onclick="limparFiltros()">Limpar tudo</button>`;
+    }
 
     function filtrados(){
-      const busca=(document.getElementById('f-busca').value||'').toLowerCase();
-      const st=document.getElementById('f-status').value;
-      const pr=document.getElementById('f-prioridade').value;
-      const at=document.getElementById('f-atendente').value;
+      const busca=(val('f-busca')||'').toLowerCase();
+      const st=val('f-status'),pr=val('f-prioridade'),cat=val('f-categoria'),sla=val('f-sla'),at=val('f-atendente'),per=val('f-periodo'),ba=val('f-bairro');
       const na=document.getElementById('f-naoatrib').checked;
-      return chamados.filter(c=>c.tipo===state.tab)
-        .filter(c=>!busca||(c.protocolo+' '+c.assunto+' '+c.solicitante).toLowerCase().includes(busca))
+      const ord=val('f-ordenar')||'recentes';
+      const prioOrder={urgente:0,alta:1,media:2,baixa:3};
+      const slaOrder={violado:0,vence:1,no_prazo:2};
+      let list=chamados.filter(c=>c.tipo===state.tab)
+        .filter(c=>!busca||(c.protocolo+' '+c.assunto+' '+c.solicitante+' '+c.categoria).toLowerCase().includes(busca))
         .filter(c=>!st||c.status===st)
         .filter(c=>!pr||c.prioridade===pr)
-        .filter(c=>!at|| (at==='__sem'?!c.atendente:c.atendente===at))
+        .filter(c=>!cat||c.categoria===cat)
+        .filter(c=>!sla||c.sla===sla)
+        .filter(c=>!at||(at==='__sem'?!c.atendente:c.atendente===at))
+        .filter(c=>!ba||c.bairro===ba)
+        .filter(c=>!per||(per==='hoje'?c.min<1440:per==='7'?c.min<10080:c.min<43200))
         .filter(c=>!na||!c.atendente);
+      list.sort((a,b)=>{
+        if(ord==='antigos')return b.min-a.min;
+        if(ord==='prioridade')return prioOrder[a.prioridade]-prioOrder[b.prioridade];
+        if(ord==='sla')return slaOrder[a.sla]-slaOrder[b.sla];
+        return a.min-b.min;
+      });
+      return list;
     }
 
     function render(){
@@ -441,6 +538,7 @@
           </tr>`).join('');
       }
       document.getElementById('foot-count').textContent=`${rows.length} chamado(s)`;
+      renderChipsCount();
       icons();
     }
 
@@ -585,7 +683,7 @@
       const prioridade=document.getElementById('n-prioridade').value;
       const categoria=document.getElementById('n-categoria').value;
       const descricao=document.getElementById('n-descricao').value.trim()||'(sem descrição)';
-      const novo={id:Date.now(),protocolo:'CH-2026-000'+(190+chamados.filter(c=>c.tipo==='interno').length),tipo:'interno',assunto,solicitante:'Bruno Almeida',documento:'Matrícula 11920',contato:'bruno.almeida@sms.salvador.ba.gov.br',categoria,prioridade,status:'aberto',sla:'no_prazo',atendente:null,atualizado:'agora',bairro:'—',vinculo:null,
+      const novo={id:Date.now(),protocolo:'CH-2026-000'+(190+chamados.filter(c=>c.tipo==='interno').length),tipo:'interno',assunto,solicitante:'Bruno Almeida',documento:'Matrícula 11920',contato:'bruno.almeida@sms.salvador.ba.gov.br',categoria,prioridade,status:'aberto',sla:'no_prazo',atendente:null,atualizado:'agora',bairro:'—',vinculo:null,min:0,
         mensagens:[{papel:'cidadao',nome:'Bruno Almeida',data:'agora',texto:descricao}]};
       chamados.unshift(novo);
       fecharNovo();
@@ -596,6 +694,7 @@
     }
 
     // ===================== Init =====================
+    popularDinamicos();
     render();
     icons();
   </script>
