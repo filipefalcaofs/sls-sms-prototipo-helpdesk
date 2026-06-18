@@ -286,7 +286,8 @@
     .cbot-head .cb-av{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.18);display:grid;place-items:center;}
     .cbot-head h4{margin:0;font-size:14px;}
     .cbot-head p{margin:1px 0 0;font-size:11px;color:#dbe9fb;}
-    .cbot-head .cb-x{margin-left:auto;color:#fff;background:transparent;border:0;display:grid;place-items:center;width:30px;height:30px;border-radius:8px;cursor:pointer;}
+    .cbot-head .cb-x{color:#fff;background:transparent;border:0;display:grid;place-items:center;width:30px;height:30px;border-radius:8px;cursor:pointer;}
+    .cb-actions{margin-left:auto;display:flex;gap:2px;}
     .cbot-head .cb-x:hover{background:rgba(255,255,255,.15);}
     .cbot-body{flex:1;overflow:auto;padding:14px;background:var(--slate-50);display:flex;flex-direction:column;gap:10px;}
     .cb-msg{max-width:86%;padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.5;}
@@ -587,7 +588,11 @@
     <div class="cbot-head">
       <div class="cb-av"><i data-lucide="bot"></i></div>
       <div><h4>Assistente SIGVISA</h4><p id="cbot-sub">Tire dúvidas sobre o sistema</p></div>
-      <button class="cb-x" onclick="cbotClose()"><i data-lucide="x"></i></button>
+      <div class="cb-actions">
+        <button class="cb-x" onclick="cbotNova()" title="Nova conversa"><i data-lucide="square-pen"></i></button>
+        <button class="cb-x" onclick="cbotHistorico()" title="Histórico de conversas"><i data-lucide="history"></i></button>
+        <button class="cb-x" onclick="cbotClose()" title="Fechar"><i data-lucide="x"></i></button>
+      </div>
     </div>
     <div class="cbot-body" id="cbot-body"></div>
     <div class="cbot-foot">
@@ -1231,7 +1236,17 @@
     }
 
     // ===================== Chatbot (assistente) =====================
-    const cbot={iniciado:false};
+    const cbot={iniciado:false,savedHTML:null};
+    const CHAT_HIST={
+      servidor:[
+        {titulo:'Como funciona a dispensa de análise',data:'16/06/2026 · 14:30',msgs:[{who:'user',t:'Como funciona a dispensa de análise?'},{who:'bot',t:'Conforme a parametrização da VISA e o grau de risco, a solicitação pode ir direto para <strong>Liberada</strong> e o DAM é gerado sem análise manual.'}]},
+        {titulo:'Andamento da VIS-2026-00188',data:'15/06/2026 · 09:12',msgs:[{who:'user',t:'Andamento da VIS-2026-00188'},{who:'bot',t:'<strong>VIS-2026-00188</strong> — Renovação de alvará · Clínica Mar Azul.<br><strong>Status:</strong> Liberada — DAM gerado, aguardando pagamento.'}]},
+      ],
+      cidadao:[
+        {titulo:'Como emitir a 2ª via do DAM',data:'16/06/2026 · 10:05',msgs:[{who:'user',t:'Como emitir a segunda via do DAM?'},{who:'bot',t:'O DAM é a guia para pagar as taxas. A <strong>segunda via</strong> fica no Portal, em "Meus alvarás/DAMs". Após o pagamento, a baixa é automática.'}]},
+        {titulo:'Documentos para renovação',data:'14/06/2026 · 16:40',msgs:[{who:'user',t:'Quais documentos preciso para renovação?'},{who:'bot',t:'Envie em <strong>PDF, JPG ou PNG</strong>, até <strong>2 MB</strong> por arquivo. Se um PDF for recusado, verifique se não está protegido por senha.'}]},
+      ],
+    };
     const CHATKB=[
       {kw:['sigvisa','o que é o sistema','o que e o sistema','vigilância sanitária','vigilancia sanitaria','dvis',' visa ','para que serve'],r:`<strong>SIGVISA</strong> é o Sistema de Gestão da Vigilância Sanitária da DVIS/SMS de Salvador. Cuida do <strong>licenciamento sanitário</strong> de estabelecimentos: cadastro, solicitação, análise, taxas (TVS e emolumentos), DAM, responsável técnico e emissão do <strong>alvará sanitário</strong> ou da dispensa. Possui o <strong>Painel VISA</strong> (equipe) e o <strong>Portal do Cidadão</strong>.`},
       {kw:['licenciamento','licenciar','licença','licenca','abrir estabelecimento','abrir empresa','como funciona','etapas','processo','passo a passo'],r:`O <strong>licenciamento sanitário</strong> segue estas etapas:<ol><li><strong>Cadastro</strong> do estabelecimento no Portal + envio de documentos.</li><li>Abertura da <strong>solicitação</strong> de licenciamento.</li><li><strong>Análise</strong> pela VISA — ou <strong>dispensa de análise</strong> conforme o grau de risco (ou MEI).</li><li>Geração do(s) <strong>DAM</strong> e <strong>pagamento</strong>.</li><li>Com tudo pago, o <strong>alvará</strong> sai automaticamente (ou a dispensa, para baixo risco/MEI).</li></ol>`},
@@ -1331,6 +1346,22 @@
       setTimeout(()=>{const i=document.getElementById('cbot-input');if(i)i.focus();},60);
     }
     function cbotClose(){document.getElementById('cbot').classList.add('hidden');document.getElementById('cbot-fab').classList.remove('hidden');}
+    function cbotNova(){cbot.savedHTML=null;document.getElementById('cbot-body').innerHTML='';cbot.iniciado=true;cbotBoasVindas(cbotContexto());toast('Nova conversa iniciada.');}
+    function cbotHistorico(){
+      if(cbot.savedHTML==null)cbot.savedHTML=document.getElementById('cbot-body').innerHTML;
+      const lista=CHAT_HIST[cbotContexto()]||[];
+      const itens=lista.length?lista.map((c,i)=>`<div class="cb-art" style="align-items:flex-start" onclick="cbotVerConversa(${i})"><i data-lucide="message-square"></i> <span><strong>${c.titulo}</strong><br><span style="color:var(--slate-500);font-weight:400">${c.data}</span></span></div>`).join(''):'<div style="color:var(--slate-500);font-size:13px">Nenhuma conversa anterior.</div>';
+      document.getElementById('cbot-body').innerHTML=`<div style="font-weight:700;color:var(--slate-700);margin-bottom:4px">Conversas anteriores</div>${itens}<div class="cb-chips" style="margin-top:10px"><button class="cb-chip" onclick="cbotVoltarChat()">← Voltar à conversa atual</button></div>`;
+      icons();
+    }
+    function cbotVerConversa(i){
+      const c=(CHAT_HIST[cbotContexto()]||[])[i];if(!c)return;
+      const b=document.getElementById('cbot-body');b.innerHTML='';
+      cbotAdd(`<span style="font-size:11px;color:var(--slate-400)">Conversa de ${c.data}</span>`,'bot');
+      c.msgs.forEach(m=>cbotAdd(m.t,m.who));
+      const back=document.createElement('div');back.className='cb-chips';back.style.marginTop='8px';back.innerHTML='<button class="cb-chip" onclick="cbotHistorico()">← Histórico</button><button class="cb-chip" onclick="cbotVoltarChat()">Conversa atual</button>';b.appendChild(back);b.scrollTop=0;icons();
+    }
+    function cbotVoltarChat(){if(cbot.savedHTML!=null){document.getElementById('cbot-body').innerHTML=cbot.savedHTML;cbot.savedHTML=null;icons();}else{cbotNova();}}
     function cbotAdd(html,who){const b=document.getElementById('cbot-body');const d=document.createElement('div');d.className='cb-msg '+(who==='user'?'cb-user':'cb-bot');d.innerHTML=html;b.appendChild(d);b.scrollTop=b.scrollHeight;icons();return d;}
     function cbotChips(arr){const b=document.getElementById('cbot-body');const d=document.createElement('div');d.className='cb-chips';d.innerHTML=arr.map(t=>`<button class="cb-chip" onclick="cbotAsk('${t.replace(/'/g,"\\'")}')">${t}</button>`).join('');b.appendChild(d);b.scrollTop=b.scrollHeight;}
     function cbotBoasVindas(ctx){
