@@ -506,10 +506,9 @@
     <header class="p-header">
       <div class="p-brand"><div class="p-mark">SV</div><div><strong>SIGVISA</strong><span>Portal do Cidadão · Prefeitura de Salvador</span></div></div>
       <div class="p-nav">
-        <a href="#" onclick="portalNav(event)">Início</a>
-        <a href="#" class="active" onclick="portalNav(event)">Central de Ajuda</a>
-        <a href="#" onclick="portalNav(event)">Meus chamados</a>
-        <button class="btn sec sm" onclick="fecharPortal()"><i data-lucide="log-out"></i> Sair da prévia</button>
+        <a href="#" id="pnav-central" class="active" onclick="portalGo(event,'central')">Central de Ajuda</a>
+        <a href="#" id="pnav-meus" onclick="portalGo(event,'meus')">Meus chamados</a>
+        <button class="btn sec sm" id="pbtn-sair" onclick="fecharPortal()"><i data-lucide="log-out"></i> Sair da prévia</button>
       </div>
     </header>
     <div id="portal-body"></div>
@@ -674,7 +673,7 @@
     artigos.forEach(a=>{if(!a.publico)a.publico=ARTPUB[a.id]||'ambos';});
     const PUBLICO={interno:{lbl:'Interno',cls:'b-slate',ic:'building-2'},cidadao:{lbl:'Cidadão',cls:'b-sky',ic:'users'},ambos:{lbl:'Painel + Cidadão',cls:'b-azul',ic:'globe'}};
 
-    const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta', kbCat:'', artigoId:null, portalCat:'', portalBusca:''};
+    const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta', kbCat:'', artigoId:null, portalCat:'', portalBusca:'', portalView:'central', portalChamadoId:null, portalStandalone:false};
 
     // ===================== Helpers =====================
     function badge(map,key){const m=map[key]||{lbl:key,cls:'b-slate'};return `<span class="badge ${m.cls}">${m.ic?`<i data-lucide="${m.ic}"></i>`:''}${m.lbl}</span>`;}
@@ -1079,7 +1078,7 @@
     }
 
     // ===================== Portal do Cidadão (Central de Ajuda pública) =====================
-    function abrirPortal(){document.querySelector('.app').classList.add('hidden');document.getElementById('portal').classList.remove('hidden');state.portalCat='';montarPortalCentral();window.scrollTo(0,0);icons();}
+    function abrirPortal(view){document.querySelector('.app').classList.add('hidden');document.getElementById('portal').classList.remove('hidden');state.portalView=view||'central';state.portalCat='';if(state.portalStandalone){const x=document.getElementById('pbtn-sair');if(x)x.classList.add('hidden');}renderPortal();window.scrollTo(0,0);icons();}
     function fecharPortal(){document.getElementById('portal').classList.add('hidden');document.querySelector('.app').classList.remove('hidden');}
     function portalNav(e){if(e)e.preventDefault();toast('Seção do Portal do Cidadão (protótipo).');}
     function portalBusca(v){state.portalBusca=v;renderPortalKB();}
@@ -1098,7 +1097,7 @@
           <div class="p-card" id="p-list"></div>
           <div class="p-card" style="margin-top:16px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--azul-50);border-color:var(--azul-200)">
             <div><strong>Não encontrou o que procura?</strong><div class="muted" style="font-size:13px">Abra um chamado e nossa equipe ajuda você.</div></div>
-            <button class="btn" onclick="toast('Abrir chamado (fluxo do cidadão).')"><i data-lucide="life-buoy"></i> Abrir chamado</button>
+            <button class="btn" onclick="portalGo(null,'novo')"><i data-lucide="life-buoy"></i> Abrir chamado</button>
           </div>
         </div>`;
       const inp=document.getElementById('p-busca');if(inp)inp.value=state.portalBusca||'';
@@ -1118,7 +1117,7 @@
       const a=artigos.find(x=>x.id===id);if(!a)return;
       document.getElementById('portal-body').innerHTML=`
         <div class="p-wrap" style="padding-top:24px">
-          <button class="btn sec sm" onclick="montarPortalCentral()"><i data-lucide="arrow-left"></i> Voltar para a Central de Ajuda</button>
+          <button class="btn sec sm" onclick="portalGo(null,'central')"><i data-lucide="arrow-left"></i> Voltar para a Central de Ajuda</button>
           <article class="art-read" style="margin-top:16px">
             <span class="badge b-azul">${a.categoria}</span>
             <h1>${a.titulo}</h1>
@@ -1131,7 +1130,7 @@
             </div>
             <div class="p-card" style="margin-top:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--azul-50);border-color:var(--azul-200)">
               <div><strong>Ainda precisa de ajuda?</strong><div class="muted" style="font-size:13px">Abra um chamado e acompanhe pelo portal.</div></div>
-              <button class="btn" onclick="toast('Abrir chamado (fluxo do cidadão).')"><i data-lucide="life-buoy"></i> Abrir chamado</button>
+              <button class="btn" onclick="portalGo(null,'novo')"><i data-lucide="life-buoy"></i> Abrir chamado</button>
             </div>
           </article>
         </div>`;
@@ -1155,6 +1154,80 @@
       render();
       toast('Chamado '+novo.protocolo+' criado.');
       document.getElementById('n-assunto').value='';document.getElementById('n-descricao').value='';
+    }
+
+    // ===================== Portal: navegação e Meus Chamados =====================
+    function setPnav(w){const a=document.getElementById('pnav-central');const b=document.getElementById('pnav-meus');if(a)a.classList.toggle('active',w==='central');if(b)b.classList.toggle('active',w!=='central');}
+    function renderPortal(){const v=state.portalView||'central';if(v==='meus')portalMeus();else if(v==='novo')portalNovoChamado();else if(v==='ver')portalVerChamado(state.portalChamadoId);else{setPnav('central');montarPortalCentral();}}
+    function portalGo(e,view){if(e&&e.preventDefault)e.preventDefault();state.portalView=view;if(view==='central')state.portalCat='';renderPortal();window.scrollTo(0,0);}
+    function portalMeus(){
+      setPnav('meus');
+      const cards=meusChamados.map(c=>`<div class="art-row" onclick="portalVerChamado(${c.id})"><div class="ai"><i data-lucide="message-square-text"></i></div><div style="flex:1;min-width:0"><h4>${c.assunto}</h4><p>${c.protocolo} · ${c.categoria}</p><div class="am">${badge(STATUS,c.status)}<span>· atualizado ${c.atualizado}</span></div></div><i data-lucide="chevron-right" style="color:var(--slate-300)"></i></div>`).join('');
+      document.getElementById('portal-body').innerHTML=`
+        <div class="p-wrap" style="padding-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+            <div><h1 style="margin:0;font-size:22px">Meus chamados</h1><p style="margin:4px 0 0;color:var(--slate-500);font-size:13px">Acompanhe e responda suas solicitações de atendimento.</p></div>
+            <button class="btn" onclick="portalGo(null,'novo')"><i data-lucide="plus"></i> Abrir novo chamado</button>
+          </div>
+          ${meusChamados.length?`<div class="p-card">${cards}</div>`:`<div class="p-card" style="padding:40px;text-align:center;color:var(--slate-500)">Você ainda não tem chamados. Abra um novo para começar.</div>`}
+        </div>`;
+      icons();
+    }
+    function portalNovoChamado(){
+      setPnav('meus');
+      document.getElementById('portal-body').innerHTML=`
+        <div class="p-wrap" style="padding-top:24px;max-width:760px">
+          <button class="btn sec sm" onclick="portalGo(null,'meus')"><i data-lucide="arrow-left"></i> Voltar</button>
+          <div class="p-card" style="margin-top:14px;padding:22px">
+            <h1 style="margin:0 0 4px;font-size:20px">Abrir novo chamado</h1>
+            <p style="margin:0 0 16px;color:var(--slate-500);font-size:13px">Descreva sua dúvida ou problema. A equipe responde pelo portal e por e-mail.</p>
+            <div class="field"><label>Categoria</label><select class="inp" id="pc-cat"><option>Dúvida sobre licenciamento</option><option>Problema no DAM/pagamento</option><option>Documentação</option><option>Acesso ao portal</option><option>Renovação de alvará</option></select></div>
+            <div class="field" style="margin-top:12px"><label>Assunto</label><input class="inp" id="pc-assunto" placeholder="Ex.: Não consigo emitir o DAM" /></div>
+            <div class="field" style="margin-top:12px"><label>Descrição</label><textarea class="inp" id="pc-desc" rows="5" placeholder="Conte o que aconteceu, quando e qual mensagem apareceu."></textarea></div>
+            <div class="field" style="margin-top:12px"><label>Vínculo (opcional)</label><input class="inp" id="pc-vinculo" placeholder="Estabelecimento ou protocolo relacionado" value="Farmácia Saúde Total · VIS-2026-00192" /></div>
+            <div style="margin-top:12px;border:1px dashed var(--slate-300);border-radius:10px;padding:16px;text-align:center;color:var(--slate-500);font-size:13px"><i data-lucide="paperclip"></i> Arraste um anexo (PDF/imagem até 2 MB) — opcional</div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px"><button class="btn sec" onclick="portalGo(null,'meus')">Cancelar</button><button class="btn" onclick="portalEnviarChamado()"><i data-lucide="send"></i> Enviar chamado</button></div>
+          </div>
+        </div>`;
+      icons();
+    }
+    function portalEnviarChamado(){
+      const assunto=(document.getElementById('pc-assunto').value||'').trim();
+      if(!assunto){toast('Informe o assunto do chamado.');return;}
+      const cat=document.getElementById('pc-cat').value;
+      const desc=(document.getElementById('pc-desc').value||'').trim()||'(sem descrição)';
+      const novo={id:Date.now(),protocolo:'CH-2026-000'+(200+meusChamados.length),assunto,categoria:cat,status:'aberto',atualizado:'agora',mensagens:[{papel:'cidadao',nome:CIDADAO_ATUAL.nome,data:'agora',texto:desc}]};
+      meusChamados.unshift(novo);
+      toast('Chamado '+novo.protocolo+' aberto com sucesso.');
+      portalVerChamado(novo.id);
+    }
+    function portalVerChamado(id){
+      setPnav('meus');state.portalView='ver';state.portalChamadoId=id;
+      const c=meusChamados.find(x=>x.id===id);if(!c)return;
+      const msgs=c.mensagens.filter(m=>m.papel!=='interna').map(m=>`<div style="display:flex;${m.papel==='cidadao'?'justify-content:flex-end':''}"><div style="max-width:80%;border:1px solid ${m.papel==='cidadao'?'var(--azul-200)':'var(--slate-200)'};background:${m.papel==='cidadao'?'var(--azul-50)':'#fff'};border-radius:14px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--slate-700)">${m.nome} <span style="font-weight:400;color:var(--slate-400)">· ${m.data}</span></div><div style="margin-top:4px;font-size:13.5px;color:var(--slate-700)">${m.texto}</div></div></div>`).join('');
+      const aval=c.status==='resolvido'?`<div class="p-card" style="margin-top:14px;padding:16px;background:var(--emerald-50);border-color:#a7f3d0"><strong>Como foi o atendimento?</strong><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${[1,2,3,4,5].map(n=>`<button class="btn sec sm" onclick="toast('Avaliado com ${n} estrela(s). Obrigado!')">★ ${n}</button>`).join('')}</div></div>`:'';
+      document.getElementById('portal-body').innerHTML=`
+        <div class="p-wrap" style="padding-top:24px;max-width:820px">
+          <button class="btn sec sm" onclick="portalGo(null,'meus')"><i data-lucide="arrow-left"></i> Meus chamados</button>
+          <div class="p-card" style="margin-top:14px;padding:18px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div><div class="proto">${c.protocolo}</div><h1 style="margin:4px 0 0;font-size:19px">${c.assunto}</h1><p style="margin:4px 0 0;color:var(--slate-500);font-size:13px">${c.categoria}</p></div>
+              ${badge(STATUS,c.status)}
+            </div>
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">${msgs}</div>
+            <div style="margin-top:14px;border-top:1px solid var(--slate-100);padding-top:14px">
+              <textarea class="inp" id="pc-resp" rows="3" placeholder="Escreva uma resposta para a equipe..."></textarea>
+              <div style="margin-top:8px;display:flex;justify-content:space-between;gap:8px"><button class="btn sec sm" onclick="toast('Anexar arquivo (protótipo).')"><i data-lucide="paperclip"></i> Anexar</button><button class="btn sm" onclick="portalResponder(${c.id})"><i data-lucide="send"></i> Enviar resposta</button></div>
+            </div>
+          </div>
+          ${aval}
+        </div>`;
+      icons();
+    }
+    function portalResponder(id){
+      const t=document.getElementById('pc-resp');const txt=(t.value||'').trim();if(!txt){toast('Escreva uma resposta.');return;}
+      const c=meusChamados.find(x=>x.id===id);c.mensagens.push({papel:'cidadao',nome:CIDADAO_ATUAL.nome,data:'agora',texto:txt});c.atualizado='agora';if(c.status==='aguardando_cidadao')c.status='em_atendimento';
+      toast('Resposta enviada.');portalVerChamado(id);
     }
 
     // ===================== Chatbot (assistente) =====================
@@ -1183,6 +1256,11 @@
       {kw:['parametrização','parametrizacao','configurar','configuração','configuracao'],e:'interno',r:`<strong>(Painel VISA)</strong> A <strong>Parametrização</strong> define regras como <strong>dispensa de análise</strong> por grau de risco, <strong>aprovação automática de cadastro</strong>, prazos de RT e integrações (SEFAZ/Gov.br) e configurações do Portal.`},
     ];
     const CIDADAO_ATUAL={nome:'Mariana Costa',doc:'042.918.735-20'};
+    let meusChamados=[
+      {id:1001,protocolo:'CH-2026-000184',assunto:'Não consigo emitir o DAM do meu alvará',categoria:'Problema no DAM/pagamento',status:'em_atendimento',atualizado:'há 18 min',mensagens:[{papel:'cidadao',nome:'Mariana Costa',data:'17/06/2026 09:14',texto:'Bom dia. Ao emitir o DAM do meu alvará o portal mostra indisponibilidade. Preciso pagar hoje.'},{papel:'atendente',nome:'Ana Paula Santana',data:'17/06/2026 09:31',texto:'Olá, Mariana. Vou acionar a equipe financeira para reprocessar o DAM e retorno por aqui.'}]},
+      {id:1002,protocolo:'CH-2026-000150',assunto:'Dúvida sobre documentos para renovação',categoria:'Documentação',status:'aguardando_cidadao',atualizado:'ontem',mensagens:[{papel:'cidadao',nome:'Mariana Costa',data:'16/06/2026 10:00',texto:'Quais documentos preciso para renovar o alvará?'},{papel:'atendente',nome:'Bruno Almeida',data:'16/06/2026 10:20',texto:'Olá! Pode nos enviar o contrato social atualizado em PDF (até 2 MB)?'}]},
+      {id:1003,protocolo:'CH-2026-000120',assunto:'Como atualizar meu e-mail de contato',categoria:'Acesso ao portal',status:'resolvido',atualizado:'há 3 dias',mensagens:[{papel:'cidadao',nome:'Mariana Costa',data:'14/06/2026 08:00',texto:'Quero atualizar meu e-mail cadastrado.'},{papel:'atendente',nome:'Ana Paula Santana',data:'14/06/2026 08:30',texto:'Pronto! Atualizamos para o e-mail informado. Estamos à disposição.'}]},
+    ];
     const PROCESSOS=[
       {protocolo:'VIS-2026-00192',tipo:'Solicitação de licenciamento',estabelecimento:'Farmácia Saúde Total',titular:'Mariana Costa',status:'Em análise',etapa:'aguardando análise do fiscal',atualizado:'há 18 min',meu:true},
       {protocolo:'VIS-2026-00188',tipo:'Renovação de alvará',estabelecimento:'Clínica Mar Azul',titular:'Roberto Nascimento',status:'Liberada',etapa:'DAM gerado, aguardando pagamento',atualizado:'há 2 h',meu:false},
@@ -1282,13 +1360,14 @@
     function cbotAbrirChamado(){
       cbotAdd('Preparei um resumo desta conversa. Vou abrir o formulário de chamado.','bot');
       const ctx=cbotContexto();
-      setTimeout(()=>{cbotClose();if(ctx==='servidor'){abrirNovo();}else{toast('Abrindo formulário de chamado do cidadão (protótipo).');}},700);
+      setTimeout(()=>{cbotClose();if(ctx==='servidor'){abrirNovo();}else{portalGo(null,'novo');}},700);
     }
 
     // ===================== Init =====================
     popularDinamicos();
     render();
     icons();
+    (function(){try{const p=new URLSearchParams(location.search);if(p.get('view')==='portal'){state.portalStandalone=true;abrirPortal('central');}}catch(e){}})();
   </script>
 </body>
 </html>
