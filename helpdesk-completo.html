@@ -1182,6 +1182,49 @@
       {kw:['relatório','relatorio','exportar','exportação','exportacao','dashboard','indicadores'],e:'interno',r:`<strong>(Painel VISA)</strong> A equipe pode <strong>exportar</strong> as listas (Excel/CSV e PDF) respeitando os filtros e acompanhar <strong>indicadores</strong> (abertos, em atendimento, SLA violado). Relatórios gerenciais ficam no menu do Painel.`},
       {kw:['parametrização','parametrizacao','configurar','configuração','configuracao'],e:'interno',r:`<strong>(Painel VISA)</strong> A <strong>Parametrização</strong> define regras como <strong>dispensa de análise</strong> por grau de risco, <strong>aprovação automática de cadastro</strong>, prazos de RT e integrações (SEFAZ/Gov.br) e configurações do Portal.`},
     ];
+    const CIDADAO_ATUAL={nome:'Mariana Costa',doc:'042.918.735-20'};
+    const PROCESSOS=[
+      {protocolo:'VIS-2026-00192',tipo:'Solicitação de licenciamento',estabelecimento:'Farmácia Saúde Total',titular:'Mariana Costa',status:'Em análise',etapa:'aguardando análise do fiscal',atualizado:'há 18 min',meu:true},
+      {protocolo:'VIS-2026-00188',tipo:'Renovação de alvará',estabelecimento:'Clínica Mar Azul',titular:'Roberto Nascimento',status:'Liberada',etapa:'DAM gerado, aguardando pagamento',atualizado:'há 2 h',meu:false},
+      {protocolo:'ALV-2026-001045',tipo:'Alvará sanitário',estabelecimento:'Padaria Pão Quente',titular:'Fernanda Lima',status:'Emitido',etapa:'alvará ativo (validade 12/2026)',atualizado:'há 3 h',meu:false},
+    ];
+    const CADASTROS=[
+      {tipo:'Estabelecimento',nome:'Farmácia Saúde Total',doc:'CNPJ 12.345.678/0001-90',extra:'Pituba · Ativo'},
+      {tipo:'Estabelecimento',nome:'Clínica Mar Azul',doc:'CNPJ 23.145.998/0001-80',extra:'Itapuã · Ativo'},
+      {tipo:'Responsável Técnico',nome:'Dra. Helena Martins',doc:'CRF-BA 12345',extra:'RT ativo'},
+      {tipo:'Cidadão',nome:'Mariana Costa',doc:'CPF 042.918.735-20',extra:'cadastro ativo'},
+    ];
+    function cbotProcHtml(p){return `<div class="cb-art" style="cursor:default;display:block"><div style="display:flex;align-items:center;gap:6px;color:var(--azul-700);font-weight:700"><i data-lucide="file-clock"></i> ${p.protocolo}</div><div style="margin-top:3px;color:var(--slate-700);font-weight:400">${p.tipo} · ${p.estabelecimento}</div><div style="margin-top:3px;color:var(--slate-600);font-weight:400"><strong>Status:</strong> ${p.status} — ${p.etapa}</div><div style="margin-top:2px;font-size:11px;color:var(--slate-400)">atualizado ${p.atualizado}</div></div>`;}
+    function cbotConsulta(texto){
+      const ctx=cbotContexto();const q=' '+texto.toLowerCase()+' ';const norm=s=>s.toUpperCase().replace(/[^A-Z0-9]/g,'');
+      const mP=texto.toUpperCase().match(/(VIS|ALV|DIS|CH)\s?-?\s?\d{4}\s?-?\s?\d{3,6}/);
+      if(mP){
+        const alvo=norm(mP[0]);
+        if(alvo.startsWith('CH')){
+          const c=chamados.find(x=>norm(x.protocolo)===alvo);
+          if(!c)return `Não localizei o chamado <strong>${mP[0]}</strong>.`;
+          if(ctx==='cidadao'&&c.tipo!=='cidadao')return `Por <strong>privacidade (LGPD)</strong>, no Portal só mostro os seus chamados.`;
+          return `<div class="cb-art" style="cursor:default;display:block"><div style="color:var(--azul-700);font-weight:700"><i data-lucide="file-clock"></i> ${c.protocolo}</div><div style="margin-top:3px;color:var(--slate-700);font-weight:400">${c.assunto}</div><div style="margin-top:3px;color:var(--slate-600);font-weight:400"><strong>Status:</strong> ${STATUS[c.status].lbl}${c.atendente?' · Atendente: '+c.atendente:' · sem atendente'}</div></div>`;
+        }
+        const p=PROCESSOS.find(x=>norm(x.protocolo)===alvo);
+        if(!p)return `Não localizei o protocolo <strong>${mP[0]}</strong>${ctx==='cidadao'?' nos seus processos':''}.`;
+        if(ctx==='cidadao'&&!p.meu)return `Por <strong>privacidade (LGPD)</strong>, no Portal só posso mostrar processos vinculados ao seu cadastro. Esse protocolo não está nos seus registros.`;
+        return cbotProcHtml(p);
+      }
+      const querCadastro=/(cadastrad|no sistema|existe no sistema|consultar o cadastro|localizar|verificar se)/.test(q);
+      const querAndamento=/(andament|acompanh| status |protocolo)/.test(q)||/(minha|meu|meus|minhas)\s+(solicita|processo|pedido|chamado|alvar|licenc)/.test(q);
+      if(querCadastro){
+        if(ctx==='cidadao')return `Por <strong>privacidade (LGPD)</strong>, no Portal não consulto dados de terceiros. Posso ajudar com os <strong>seus</strong> processos e cadastros, ou abrir um chamado.`;
+        const achados=CADASTROS.filter(c=>{const t=(c.nome+' '+c.doc).toLowerCase();return q.split(/\s+/).some(w=>w.length>3&&t.includes(w));});
+        if(achados.length){let h='Encontrei no sistema:';achados.forEach(c=>h+=`<div class="cb-art" style="cursor:default;display:block"><div style="color:var(--azul-700);font-weight:700"><i data-lucide="badge-check"></i> ${c.nome}</div><div style="margin-top:3px;color:var(--slate-600);font-weight:400">${c.tipo} · ${c.doc} · ${c.extra}</div></div>`);return h;}
+        return 'Para verificar o cadastro, informe o <strong>nome completo</strong>, <strong>CPF/CNPJ</strong> ou <strong>registro (CRF)</strong>.';
+      }
+      if(querAndamento){
+        if(ctx==='cidadao'){const meus=PROCESSOS.filter(x=>x.meu);if(!meus.length)return 'Você não tem processos em andamento no momento.';let h='Seus processos em andamento:';meus.forEach(p=>h+=cbotProcHtml(p));return h;}
+        return 'Posso consultar o andamento. Informe o <strong>número do protocolo</strong> (ex.: VIS-2026-00192) ou o estabelecimento/CPF do titular.';
+      }
+      return null;
+    }
     function cbotContexto(){const p=document.getElementById('portal');return (p&&!p.classList.contains('hidden'))?'cidadao':'servidor';}
     function cbotOpen(){
       document.getElementById('cbot').classList.remove('hidden');
@@ -1197,7 +1240,7 @@
     function cbotChips(arr){const b=document.getElementById('cbot-body');const d=document.createElement('div');d.className='cb-chips';d.innerHTML=arr.map(t=>`<button class="cb-chip" onclick="cbotAsk('${t.replace(/'/g,"\\'")}')">${t}</button>`).join('');b.appendChild(d);b.scrollTop=b.scrollHeight;}
     function cbotBoasVindas(ctx){
       cbotAdd(ctx==='cidadao'?'Olá! Sou o assistente do SIGVISA, com o conhecimento da Vigilância Sanitária de Salvador. Posso explicar licenciamento, DAM, taxas (TVS), responsável técnico, grau de risco, dispensas, prazos e muito mais. Como posso ajudar?':'Olá! Sou o assistente do SIGVISA, treinado no conhecimento da VISA/DVIS. Posso explicar regras de licenciamento, DAM, TVS, RT, dispensas, grau de risco e o uso do sistema. O que você precisa?','bot');
-      cbotChips(ctx==='cidadao'?['Como funciona o licenciamento?','Como emitir a 2ª via do DAM?','O que é grau de risco?','Não consigo acessar o portal']:['Como funciona a dispensa de análise?','Quando o alvará é suspenso?','Como a TVS é calculada?','Fluxo do responsável técnico']);
+      cbotChips(ctx==='cidadao'?['Como está a minha solicitação?','Como emitir a 2ª via do DAM?','O que é grau de risco?','Não consigo acessar o portal']:['Andamento da VIS-2026-00192','A Farmácia Saúde Total está cadastrada?','Como funciona a dispensa de análise?','Como a TVS é calculada?']);
     }
     function cbotSend(){const i=document.getElementById('cbot-input');const t=(i.value||'').trim();if(!t)return;i.value='';cbotAsk(t);}
     function cbotAsk(texto){
@@ -1212,6 +1255,8 @@
       return base.filter(a=>{const txt=(a.titulo+' '+a.resumo+' '+a.categoria).toLowerCase();return q.split(/\s+/).some(w=>w.length>3&&txt.includes(w));}).slice(0,2);
     }
     function cbotResponder(texto){
+      const consulta=cbotConsulta(texto);
+      if(consulta!==null){const d=cbotAdd(consulta,'bot');const cta=document.createElement('div');cta.className='cb-chips';cta.style.marginTop='8px';cta.innerHTML=`<button class="cb-chip" onclick="cbotAbrirChamado()">Abrir chamado</button>`;d.appendChild(cta);icons();return;}
       const q=' '+texto.toLowerCase()+' ';
       const ctx=cbotContexto();
       const base=CHATKB.filter(t=>ctx==='servidor'||t.e!=='interno');
