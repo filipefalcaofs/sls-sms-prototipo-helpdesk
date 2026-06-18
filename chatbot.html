@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGVISA · Protótipo do Chatbot</title>
+  <style>
+    :root {
+      --teal-50: #f0f7ff;
+      --teal-100: #e0efff;
+      --teal-400: #4ca3fa;
+      --teal-500: #1a82e0;
+      --teal-600: #005ca9;
+      --teal-700: #004a8a;
+      --teal-900: #00335e;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --emerald-50: #ecfdf5;
+      --emerald-100: #d1fae5;
+      --emerald-700: #047857;
+      --amber-50: #fffbeb;
+      --amber-100: #fef3c7;
+      --amber-700: #b45309;
+      --rose-50: #fff1f2;
+      --rose-100: #ffe4e6;
+      --rose-700: #be123c;
+      --sky-50: #f0f9ff;
+      --sky-100: #e0f2fe;
+      --sky-700: #0369a1;
+      --page-dark: #0b1520;
+      --font: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--slate-900);
+      background:
+        radial-gradient(circle at 88% 12%, rgba(0,92,169,.10), transparent 32%),
+        linear-gradient(180deg, #f8fafc 0%, #eef5fb 100%);
+      font: 15px/1.5 var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 30px 0 46px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 22px;
+    }
+    .eyebrow {
+      color: var(--teal-700);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 6px 0 9px;
+      max-width: 780px;
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1.03;
+      letter-spacing: -.03em;
+    }
+    .lead {
+      max-width: 68ch;
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 17px;
+    }
+    .top-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      border-radius: 10px;
+      padding: 0 14px;
+      text-decoration: none;
+      font-weight: 800;
+    }
+    .btn.primary {
+      border: 0;
+      color: #fff;
+      background: var(--teal-600);
+      box-shadow: 0 12px 24px rgba(0,92,169,.20);
+    }
+    .btn.soft {
+      border: 1px solid var(--slate-200);
+      color: var(--slate-700);
+      background: rgba(255,255,255,.82);
+    }
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid var(--slate-200);
+      border-radius: 18px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 14px 36px rgba(15,23,42,.07);
+      overflow: hidden;
+    }
+    .phone {
+      position: sticky;
+      top: 24px;
+      padding: 16px;
+      background: linear-gradient(180deg, var(--slate-900), #071525);
+    }
+    .phone-frame {
+      width: min(100%, 390px);
+      min-height: 720px;
+      margin: 0 auto;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 34px;
+      padding: 12px;
+      background: #0b1520;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 28px 70px rgba(2,6,23,.34);
+    }
+    .phone-screen {
+      position: relative;
+      min-height: 694px;
+      overflow: hidden;
+      border-radius: 26px;
+      background: var(--slate-50);
+    }
+    .phone-top {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 18px 4px;
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .phone-content { padding: 14px; }
+    .mini-page {
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+    }
+    .mini-page h2 {
+      margin: 2px 0 8px;
+      font-size: 20px;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    .mini-card {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--slate-100);
+    }
+    .fab-demo {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 56px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 16px;
+      color: #fff;
+      background: var(--teal-600);
+      box-shadow: 0 18px 42px rgba(0,92,169,.32);
+      font-weight: 850;
+    }
+    .badge-dot {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      color: var(--teal-700);
+      background: #fff;
+      font-size: 11px;
+    }
+    .states {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .state-card {
+      border: 1px solid var(--slate-200);
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 10px 28px rgba(15,23,42,.06);
+      overflow: hidden;
+    }
+    .state-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--slate-200);
+      background: var(--slate-50);
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .chat {
+      width: 100%;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+    .chat.dark {
+      color: var(--slate-100);
+      background: var(--slate-800);
+    }
+    .chat-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      color: #fff;
+      background: var(--teal-600);
+    }
+    .assistant-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      border-radius: 11px;
+      background: rgba(255,255,255,.16);
+      font-weight: 900;
+    }
+    .assistant-id strong { display: block; line-height: 1; }
+    .assistant-id span { display: block; margin-top: 4px; font-size: 11px; opacity: .82; }
+    .context-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 9px;
+      background: rgba(255,255,255,.14);
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .chat-body {
+      flex: 1;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 14px;
+      overflow: auto;
+      background:
+        linear-gradient(180deg, rgba(248,250,252,.9), rgba(255,255,255,.9));
+    }
+    .chat.dark .chat-body {
+      background: linear-gradient(180deg, rgba(15,23,42,.55), rgba(30,41,59,.9));
+    }
+    .time {
+      justify-self: center;
+      color: var(--slate-500);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .bubble {
+      max-width: 84%;
+      border-radius: 18px;
+      padding: 11px 12px;
+      background: var(--slate-100);
+      color: var(--slate-900);
+      font-size: 13px;
+    }
+    .chat.dark .bubble {
+      background: var(--slate-700);
+      color: var(--slate-100);
+    }
+    .bubble.user {
+      justify-self: end;
+      color: #fff;
+      background: var(--teal-600);
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .chip {
+      border: 1px solid rgba(0,92,169,.16);
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: var(--teal-700);
+      background: var(--teal-50);
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .source {
+      border-radius: 12px;
+      padding: 9px 10px;
+      color: var(--sky-700);
+      background: var(--sky-50);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .fallback {
+      border: 1px solid rgba(180,83,9,.24);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--amber-50);
+      color: var(--amber-700);
+    }
+    .confirmation {
+      border: 1px solid rgba(4,120,87,.22);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--emerald-50);
+      color: var(--emerald-700);
+    }
+    .error {
+      border: 1px solid rgba(190,18,60,.22);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--rose-50);
+      color: var(--rose-700);
+    }
+    .typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      width: max-content;
+      border-radius: 999px;
+      padding: 10px 12px;
+      background: var(--slate-100);
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--teal-600);
+      animation: pulse 1.1s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: .12s; }
+    .dot:nth-child(3) { animation-delay: .24s; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: .28; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+    .chat-foot {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--slate-200);
+      background: #fff;
+    }
+    .chat.dark .chat-foot {
+      border-color: rgba(148,163,184,.18);
+      background: var(--slate-800);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px;
+      gap: 8px;
+    }
+    .field {
+      min-height: 38px;
+      width: 100%;
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 0 11px;
+      color: var(--slate-900);
+      background: #fff;
+      outline: none;
+    }
+    textarea.field { min-height: 70px; padding: 10px 11px; resize: vertical; }
+    .field:focus {
+      border-color: var(--teal-600);
+      box-shadow: 0 0 0 3px rgba(0,92,169,.12);
+    }
+    .send {
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--teal-600);
+      font-weight: 900;
+    }
+    .disclaimer {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--slate-500);
+      font-size: 11px;
+    }
+    .disclaimer a { color: var(--teal-700); font-weight: 800; text-decoration: none; }
+    .mini-form {
+      display: grid;
+      gap: 8px;
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+    }
+    .mini-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--slate-600);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .state-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .action {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #fff;
+      background: var(--teal-600);
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .action.secondary {
+      color: var(--teal-700);
+      background: var(--teal-50);
+    }
+
+    @media (max-width: 1050px) {
+      .hero, .stage { grid-template-columns: 1fr; }
+      .phone { position: static; }
+      .states { grid-template-columns: 1fr; }
+      .top-links { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Protótipo isolado</div>
+        <h1>Chatbot de suporte do SIGVISA</h1>
+        <p class="lead">Todos os estados do assistente em uma página para validação visual: FAB fechado, boas-vindas, conversa, digitando, fallback, abertura de chamado, confirmação, erro e versão mobile.</p>
+      </div>
+      <nav class="top-links" aria-label="Navegação dos protótipos">
+        <a class="btn soft" href="index.html">Voltar ao índice</a>
+        <a class="btn primary" href="helpdesk-completo.html">Abrir HelpDesk completo</a>
+      </nav>
+    </header>
+
+    <div class="stage">
+      <section class="panel phone" aria-label="Prévia mobile do widget fechado">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-top"><span>09:41</span><span>5G 100%</span></div>
+            <div class="phone-content">
+              <section class="mini-page">
+                <div class="eyebrow">Portal do Cidadão</div>
+                <h2>Meus chamados</h2>
+                <p class="lead" style="font-size:13px;">Acompanhe dúvidas, solicitações de suporte e respostas da equipe VISA.</p>
+                <div class="mini-card">
+                  <strong>CH-2026-000184</strong>
+                  <span>Paguei o DAM, mas ele não baixou</span>
+                  <span class="chip" style="width:max-content;">Em análise</span>
+                </div>
+                <div class="mini-card">
+                  <strong>CH-2026-000173</strong>
+                  <span>Erro ao enviar documento PDF</span>
+                  <span class="chip" style="width:max-content;">Aguardando cidadão</span>
+                </div>
+              </section>
+            </div>
+            <button class="fab-demo" type="button">💬 Posso ajudar? <span class="badge-dot">1</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="states" aria-label="Estados do chatbot">
+        <article class="state-card">
+          <div class="state-label"><span>01 · Boas-vindas cidadão</span><span>claro</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <span class="time">Hoje, 09:41</span>
+              <p class="bubble">Olá! Posso ajudar com dúvidas sobre cadastro de estabelecimento, solicitações, DAM, alvará e acesso ao portal. Como posso ajudar?</p>
+              <div class="chips">
+                <button class="chip" type="button">Como emitir a segunda via do DAM?</button>
+                <button class="chip" type="button">Quais documentos preciso para renovar o alvará?</button>
+                <button class="chip" type="button">Como acompanho minha solicitação?</button>
+                <button class="chip" type="button">Esqueci minha senha do portal</button>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>02 · Boas-vindas fiscal</span><span>dark</span></div>
+          <div class="chat dark">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Painel VISA</span>
+            </header>
+            <div class="chat-body">
+              <span class="time">Hoje, 09:42</span>
+              <p class="bubble">Olá! Posso ajudar com dúvidas sobre análise de solicitações, requisitos, emissão de alvará e uso do painel. Como posso ajudar?</p>
+              <div class="chips">
+                <button class="chip" type="button">Como analiso uma solicitação?</button>
+                <button class="chip" type="button">Como gerar instruções de IA para um requisito?</button>
+                <button class="chip" type="button">Onde vejo os relatórios por distrito?</button>
+                <button class="chip" type="button">Como emito o alvará após o deferimento?</button>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>Confira informações importantes.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>03 · Conversa com fonte</span><span>DAM</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <p class="bubble user">Não consigo emitir o DAM do meu alvará.</p>
+              <p class="bubble">Vou te ajudar. Para emitir ou pegar a 2ª via do DAM: 1) acesse Solicitações e abra a solicitação correspondente; 2) clique em Emitir DAM; 3) se já existir, use Segunda via. O pagamento pode levar até 1 dia útil para baixar.</p>
+              <div class="source">Fonte: Manual do Cidadão — Emissão de DAM</div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>04 · Digitando</span><span>streaming</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <p class="bubble user">Quais documentos preciso para renovar o alvará?</p>
+              <div class="typing"><span>O assistente está digitando</span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>05 · Fallback</span><span>encaminha ao formulário</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <p class="bubble user">Paguei o DAM, mas ele não baixou e minha vistoria é amanhã.</p>
+              <p class="bubble">Esse caso depende da confirmação do pagamento junto à SEFAZ e precisa de análise individual. Não consigo resolver por aqui com segurança.</p>
+              <div class="fallback">
+                <strong>Não encontrei uma resposta segura para isso.</strong>
+                <p>Posso preparar um resumo e levar você ao formulário oficial de abertura de chamado.</p>
+                <div class="state-actions"><button class="action" type="button">Preencher formulário de chamado</button><button class="action secondary" type="button">Tentar reformular</button></div>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>06 · Formulário de chamado</span><span>pré-preenchido</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <div class="mini-form">
+                <label>Resumo preparado pelo assistente<textarea class="field">Cidadão informa pagamento do DAM, mas a baixa ainda não aparece e há vistoria marcada para amanhã.</textarea></label>
+                <label>Assunto<input class="field" value="Paguei o DAM, mas ele não baixou" /></label>
+                <label>Categoria<select class="field"><option>Problema no DAM/pagamento</option><option>Documentação</option><option>Acesso ao portal</option></select></label>
+                <label>Contato<input class="field" value="maria.santos@email.com" /></label>
+                <button class="action" type="button">Continuar no formulário</button>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="disclaimer"><span>PDF/imagem até 2 MB pode ser anexado no chamado.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>07 · Confirmação</span><span>protocolo</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Online — tira dúvidas sobre o sistema</span></span></div>
+              <span class="context-badge">Portal do Cidadão</span>
+            </header>
+            <div class="chat-body">
+              <div class="confirmation">
+                <strong>Chamado enviado pelo formulário!</strong>
+                <p>Protocolo <span style="font-family:var(--mono);">CH-2026-000184</span>. Você pode acompanhar em Meus chamados.</p>
+                <div class="state-actions"><button class="action" type="button">Acompanhar chamado</button></div>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <div class="state-label"><span>08 · Erro</span><span>fora do ar</span></div>
+          <div class="chat">
+            <header class="chat-head">
+              <div class="assistant-id"><span class="avatar">?</span><span><strong>Assistente SIGVISA</strong><span>Instável no momento</span></span></div>
+              <span class="context-badge">Painel VISA</span>
+            </header>
+            <div class="chat-body">
+              <div class="error">
+                <strong>Não foi possível carregar a resposta.</strong>
+                <p>Verifique sua conexão ou tente novamente em alguns instantes.</p>
+                <div class="state-actions"><button class="action" type="button">Tentar novamente</button></div>
+              </div>
+            </div>
+            <footer class="chat-foot">
+              <div class="input-row"><input class="field" placeholder="Escreva sua dúvida..." /><button class="send" type="button">➜</button></div>
+              <div class="disclaimer"><span>O assistente usa IA e pode cometer erros.</span><a href="#">Nova conversa</a></div>
+            </footer>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
