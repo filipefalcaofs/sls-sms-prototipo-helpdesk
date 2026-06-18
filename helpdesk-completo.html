@@ -337,6 +337,15 @@
     .legend{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--slate-600);}
     .legend .li{display:flex;align-items:center;gap:7px;}
     .legend .sq{width:11px;height:11px;border-radius:3px;flex:0 0 auto;}
+    .dfbar{padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;margin-bottom:16px;}
+    .df{display:flex;flex-direction:column;gap:4px;}
+    .df label{font-size:11px;color:var(--slate-500);font-weight:600;}
+    .df select,.df input{border:1px solid var(--slate-200);border-radius:9px;padding:7px 10px;font-size:13px;font-family:inherit;background:#fff;color:var(--slate-900);min-width:128px;cursor:pointer;}
+    .df select:focus,.df input:focus{outline:none;border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(0,92,169,.12);}
+    .df-clear{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--slate-200);background:#fff;color:var(--slate-600);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;height:36px;}
+    .df-clear:hover{background:#f8fafc;border-color:#cbd5e1;color:var(--slate-900);}
+    .df-clear i{width:15px;height:15px;}
+    .df-count{margin-left:auto;align-self:center;font-size:12px;color:var(--slate-500);}
     @media(max-width:1024px){.dash-grid{grid-template-columns:repeat(2,1fr);}.dash-2{grid-template-columns:1fr;}}
 
     /* ---------- Mobile ---------- */
@@ -1014,13 +1023,27 @@
     function irLista(e){if(e)e.preventDefault();irChamados();}
     function irDashboard(e){if(e)e.preventDefault();hideAll();document.getElementById('view-dashboard').classList.remove('hidden');setNav('nav-dashboard');document.getElementById('crumb').innerHTML='Operação <span>/ Dashboard</span>';renderDashboard();window.scrollTo(0,0);}
     function kpiHtml(k){return `<div class="kpi"><div class="t">${k.t}</div><div class="v" style="${k.cls}">${k.v}</div><div class="d muted">${k.d}</div></div>`;}
+    const dashF={periodo:'todos',ini:'',fim:'',tipo:'',distrito:'',atendente:'',prioridade:''};
+    function distritoDe(b){const d=DISTRITOS.find(x=>x.bairro===b);return d?d.distrito.replace('Distrito Sanitário ','').replace(/^de /,''):'Não informado';}
+    function dashSet(k,v){dashF[k]=v;renderDashboard();}
+    function dashLimpar(){Object.assign(dashF,{periodo:'todos',ini:'',fim:'',tipo:'',distrito:'',atendente:'',prioridade:''});renderDashboard();}
+    function dashFiltrar(arr){let r=arr.slice();const now=Date.now(),dia=86400000;
+      if(dashF.periodo==='7')r=r.filter(c=>c.data>=now-7*dia);
+      else if(dashF.periodo==='30')r=r.filter(c=>c.data>=now-30*dia);
+      else if(dashF.periodo==='90')r=r.filter(c=>c.data>=now-90*dia);
+      else if(dashF.periodo==='custom'){if(dashF.ini)r=r.filter(c=>c.data>=new Date(dashF.ini+'T00:00:00'));if(dashF.fim)r=r.filter(c=>c.data<=new Date(dashF.fim+'T23:59:59'));}
+      if(dashF.tipo)r=r.filter(c=>c.tipo===dashF.tipo);
+      if(dashF.prioridade)r=r.filter(c=>c.prioridade===dashF.prioridade);
+      if(dashF.atendente)r=r.filter(c=>(c.atendente||'Sem atendente')===dashF.atendente);
+      if(dashF.distrito)r=r.filter(c=>distritoDe(c.bairro)===dashF.distrito);
+      return r;}
     function renderDashboard(){
-      const all=chamados;const cnt=s=>all.filter(c=>c.status===s).length;const cntSla=s=>all.filter(c=>c.sla===s).length;
+      const all=dashFiltrar(chamados);const cnt=s=>all.filter(c=>c.status===s).length;const cntSla=s=>all.filter(c=>c.sla===s).length;
       const np=cntSla('no_prazo'),vc=cntSla('vence'),vi=cntSla('violado');const slaPct=Math.round(np/(np+vc+vi||1)*100);
       const kpis=[
         {t:'Abertos',v:cnt('aberto'),d:'aguardando triagem',cls:'color:var(--sky-700)'},
         {t:'Em atendimento',v:cnt('em_atendimento'),d:'com responsável',cls:'color:var(--azul-700)'},
-        {t:'Resolvidos (7 dias)',v:42,d:'+8% vs. semana anterior',cls:'color:var(--emerald-700)'},
+        {t:'Resolvidos',v:cnt('resolvido')+cnt('fechado'),d:'no período filtrado',cls:'color:var(--emerald-700)'},
         {t:'SLA violado',v:vi,d:'requer atenção',cls:'color:var(--rose-700)'},
         {t:'Cumprimento de SLA',v:slaPct+'%',d:'meta: 90%',cls:'color:var(--emerald-700)'},
         {t:'1ª resposta (média)',v:'26 min',d:'meta: 1 hora',cls:'color:var(--azul-700)'},
@@ -1028,8 +1051,24 @@
         {t:'Reabertura',v:'3,1%',d:'42 de 1.350 chamados',cls:'color:var(--amber-700)'},
       ];
       const group=(fn)=>{const m={};all.forEach(x=>{const k=fn(x)||'—';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+      const distOpts=[...new Set(chamados.map(c=>distritoDe(c.bairro)))];
+      const atdOpts=[...new Set(chamados.map(c=>c.atendente||'Sem atendente'))];
+      const opt=(v,l,cur)=>`<option value="${v}"${cur===v?' selected':''}>${l}</option>`;
+      const custom=dashF.periodo==='custom'?`<div class="df"><label>De</label><input type="date" value="${dashF.ini}" onchange="dashSet('ini',this.value)"></div><div class="df"><label>Até</label><input type="date" value="${dashF.fim}" onchange="dashSet('fim',this.value)"></div>`:'';
+      const filtrosHtml=`<div class="panel dfbar">
+          <div class="df"><label>Período</label><select onchange="dashSet('periodo',this.value)">${opt('todos','Todos',dashF.periodo)}${opt('7','Últimos 7 dias',dashF.periodo)}${opt('30','Últimos 30 dias',dashF.periodo)}${opt('90','Últimos 90 dias',dashF.periodo)}${opt('custom','Personalizado',dashF.periodo)}</select></div>
+          ${custom}
+          <div class="df"><label>Tipo</label><select onchange="dashSet('tipo',this.value)">${opt('','Todos',dashF.tipo)}${opt('cidadao','Cidadão',dashF.tipo)}${opt('interno','Interno',dashF.tipo)}</select></div>
+          <div class="df"><label>Prioridade</label><select onchange="dashSet('prioridade',this.value)">${opt('','Todas',dashF.prioridade)}${opt('baixa','Baixa',dashF.prioridade)}${opt('media','Média',dashF.prioridade)}${opt('alta','Alta',dashF.prioridade)}${opt('urgente','Urgente',dashF.prioridade)}</select></div>
+          <div class="df"><label>Distrito</label><select onchange="dashSet('distrito',this.value)">${opt('','Todos',dashF.distrito)}${distOpts.map(d=>opt(d,d,dashF.distrito)).join('')}</select></div>
+          <div class="df"><label>Atendente</label><select onchange="dashSet('atendente',this.value)">${opt('','Todos',dashF.atendente)}${atdOpts.map(a=>opt(a,a,dashF.atendente)).join('')}</select></div>
+          <button class="df-clear" onclick="dashLimpar()"><i data-lucide="x"></i> Limpar</button>
+          <span class="df-count">${all.length} de ${chamados.length} chamado(s)</span>
+        </div>`;
       document.getElementById('view-dashboard').innerHTML=`
         <div class="page-head"><div><h1>Dashboard</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
+        ${filtrosHtml}
+        ${all.length===0?`<div class="panel" style="padding:28px;text-align:center;color:var(--slate-500)"><i data-lucide="filter-x" style="width:26px;height:26px"></i><div style="margin-top:8px">Nenhum chamado para os filtros selecionados. Ajuste os filtros ou clique em <strong>Limpar</strong>.</div></div>`:`
         <div class="dash-grid">${kpis.slice(0,4).map(kpiHtml).join('')}</div>
         <div class="dash-grid">${kpis.slice(4).map(kpiHtml).join('')}</div>
         <div class="dash-2">
@@ -1047,9 +1086,9 @@
         <div class="dash-2" style="margin-top:16px">
           <div class="panel" style="padding:16px"><h3 class="dh">Satisfação (distribuição)</h3><div id="ec-sat" style="height:210px"></div><div class="muted" style="font-size:12px;text-align:center">Média 4,6 / 5 · 128 avaliações</div></div>
           <div class="panel" style="padding:16px"><h3 class="dh">Autoatendimento (assistente + base)</h3><div id="ec-auto" style="height:200px"></div><div class="muted" style="font-size:12px;text-align:center">68% das dúvidas resolvidas sem abrir chamado</div></div>
-        </div>`;
+        </div>`}`;
       icons();
-      if(!window.echarts){return;}
+      if(!window.echarts||all.length===0){return;}
       const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],ab=[7,9,8,11,9,4,3],re=[5,8,6,9,8,3,2];
       ecInit('ec-sla',{series:[{type:'gauge',startAngle:200,endAngle:-20,min:0,max:100,radius:'100%',center:['50%','62%'],
         progress:{show:true,width:14,roundCap:true,itemStyle:{color:slaPct>=90?'#059669':slaPct>=70?'#f59e0b':'#f43f5e'}},
