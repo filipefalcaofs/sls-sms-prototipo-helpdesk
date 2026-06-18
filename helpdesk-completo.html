@@ -233,6 +233,14 @@
     .inp:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.12);}
     textarea.inp{height:auto;padding:10px 11px;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .spin{width:34px;height:34px;border:3px solid var(--slate-200);border-top-color:var(--azul-600);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .ia-banner{display:flex;gap:10px;align-items:flex-start;background:var(--azul-50);border:1px solid var(--azul-200);border-radius:10px;padding:12px;color:var(--slate-700);font-size:13px;}
+    .ia-banner svg{color:var(--azul-600);width:18px;height:18px;flex:0 0 auto;margin-top:1px;}
+    .ia-prev{border:1px solid var(--slate-200);border-radius:10px;padding:14px;max-height:230px;overflow:auto;background:var(--slate-50);font-size:13.5px;line-height:1.6;color:var(--slate-700);}
+    .ia-prev h2{font-size:14px;margin:14px 0 6px;color:var(--slate-900);}
+    .ia-prev ol,.ia-prev ul{padding-left:18px;margin:6px 0;}
+    .ia-prev li{margin:4px 0;}
 
     /* toast */
     .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-900);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:60;box-shadow:0 16px 40px rgba(0,0,0,.25);}
@@ -456,6 +464,30 @@
     </div>
   </div>
 
+  <!-- Modal IA: transformar atendimento em artigo -->
+  <div class="overlay" id="overlay-ia">
+    <div class="modal">
+      <div class="mh"><h2>Transformar atendimento em artigo</h2><button class="icon-btn" onclick="fecharIA()"><i data-lucide="x"></i></button></div>
+      <div class="mb">
+        <div id="ia-loading" style="text-align:center;padding:26px 0">
+          <div class="spin"></div>
+          <p style="margin:14px 0 0;color:var(--slate-600);font-size:13px">A IA está analisando a conversa do chamado e redigindo o artigo...</p>
+        </div>
+        <div id="ia-form" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+          <div class="ia-banner"><i data-lucide="sparkles"></i><div><strong>Rascunho gerado por IA</strong> a partir do chamado <span id="ia-proto"></span>. Revise e ajuste antes de publicar.</div></div>
+          <div class="field"><label>Título</label><input class="inp" id="ia-titulo" /></div>
+          <div class="grid2">
+            <div class="field"><label>Categoria</label><select class="inp" id="ia-categoria"><option>Licenciamento</option><option>DAM/Pagamento</option><option>Acesso ao portal</option><option>Documentos</option></select></div>
+            <div class="field"><label>Situação</label><select class="inp" id="ia-status"><option value="publicado">Publicar</option><option value="rascunho">Salvar como rascunho</option></select></div>
+          </div>
+          <div class="field"><label>Resumo</label><textarea class="inp" id="ia-resumo" rows="2"></textarea></div>
+          <div class="field"><label>Conteúdo (prévia gerada pela IA)</label><div class="ia-prev" id="ia-prev"></div></div>
+        </div>
+      </div>
+      <div class="mf"><button class="btn sec" onclick="fecharIA()">Cancelar</button><button class="btn" id="ia-btn-pub" onclick="publicarArtigoIA()" disabled><i data-lucide="check"></i> Publicar na base</button></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -664,6 +696,7 @@
               <span class="muted" style="font-size:12px">· aberto por ${c.solicitante} · ${c.atualizado}</span>
             </div>
           </div>
+          <button class="btn" onclick="gerarArtigoIA()"><i data-lucide="sparkles"></i> Gerar artigo (IA)</button>
         </div>
         <div class="detail-grid">
           <div>
@@ -842,6 +875,51 @@
       fecharArtigo();state.kbCat='';renderKB();
       toast('Artigo '+(status==='publicado'?'publicado':'salvo como rascunho')+'.');
       document.getElementById('a-titulo').value='';document.getElementById('a-resumo').value='';document.getElementById('a-conteudo').value='';
+    }
+
+    // ===================== IA: atendimento -> artigo =====================
+    const KBMAP={'Problema no DAM/pagamento':'DAM/Pagamento','Documentação':'Documentos','Acesso ao portal':'Acesso ao portal','Renovação de alvará':'Licenciamento','Dúvida sobre licenciamento':'Licenciamento'};
+    let iaConteudo='';
+    function gerarArtigoIA(){
+      const c=byId(state.abertoId);if(!c)return;
+      document.getElementById('overlay-ia').classList.add('open');
+      document.getElementById('ia-loading').classList.remove('hidden');
+      document.getElementById('ia-form').classList.add('hidden');
+      document.getElementById('ia-btn-pub').disabled=true;
+      icons();
+      setTimeout(()=>{
+        const cidadaoMsg=c.mensagens.find(m=>m.papel==='cidadao');
+        const respostas=c.mensagens.filter(m=>m.papel==='atendente');
+        const titulo='Como resolver: '+c.assunto;
+        const cat=KBMAP[c.categoria]||'Licenciamento';
+        const resumo='Passo a passo para resolver "'+c.assunto.toLowerCase()+'", com base em um atendimento real da Central de Chamados.';
+        const passos=respostas.length?respostas.map(r=>`<li>${r.texto}</li>`).join(''):'<li>Descreva aqui a solução aplicada ao caso.</li>';
+        iaConteudo=`<p><strong>Resumo:</strong> ${resumo}</p>`+
+          `<h2>Problema relatado</h2><p>${cidadaoMsg?cidadaoMsg.texto:c.assunto}</p>`+
+          `<h2>Como resolver</h2><ol>${passos}</ol>`+
+          `<p><em>Conteúdo gerado por IA a partir do chamado ${c.protocolo}. Revise antes de publicar.</em></p>`;
+        document.getElementById('ia-proto').textContent=c.protocolo;
+        document.getElementById('ia-titulo').value=titulo;
+        document.getElementById('ia-categoria').value=cat;
+        document.getElementById('ia-resumo').value=resumo;
+        document.getElementById('ia-prev').innerHTML=iaConteudo;
+        document.getElementById('ia-loading').classList.add('hidden');
+        document.getElementById('ia-form').classList.remove('hidden');
+        document.getElementById('ia-btn-pub').disabled=false;
+        icons();
+      },1300);
+    }
+    function fecharIA(){document.getElementById('overlay-ia').classList.remove('open');}
+    function publicarArtigoIA(){
+      const titulo=document.getElementById('ia-titulo').value.trim();
+      if(!titulo){toast('Informe o título do artigo.');return;}
+      const categoria=document.getElementById('ia-categoria').value;
+      const status=document.getElementById('ia-status').value;
+      const resumo=document.getElementById('ia-resumo').value.trim()||'(sem resumo)';
+      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'4 min',status,views:0,atualizado:'agora',conteudo:iaConteudo});
+      fecharIA();
+      toast('Artigo '+(status==='publicado'?'publicado':'salvo como rascunho')+' na base de conhecimento.');
+      abrirArtigo(artigos[0].id);
     }
 
     // ===================== Novo chamado =====================
