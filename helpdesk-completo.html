@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
   <style>
     :root {
       --azul-50:#f0f7ff; --azul-100:#e0efff; --azul-200:#b8dbff; --azul-400:#4ca3fa;
@@ -1027,38 +1028,75 @@
         {t:'Reabertura',v:'3,1%',d:'42 de 1.350 chamados',cls:'color:var(--amber-700)'},
       ];
       const group=(fn)=>{const m={};all.forEach(x=>{const k=fn(x)||'—';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
-      const bars=(pairs,color)=>{const max=Math.max(1,...pairs.map(p=>p[1]));return pairs.map(([k,n])=>`<div class="bar-row"><span class="bl">${k}</span><span class="bt"><span class="bf" style="width:${Math.round(n/max*100)}%${color?';background:'+color:''}"></span></span><span class="bv">${n}</span></div>`).join('');};
-      const statusBars=bars(Object.keys(STATUS).map(k=>[STATUS[k].lbl,cnt(k)]));
-      const catBars=bars(group(c=>c.categoria).slice(0,6));
-      const distBars=bars(group(c=>{const d=DISTRITOS.find(x=>x.bairro===c.bairro);return d?d.distrito.replace('Distrito Sanitário ','DS ').replace('de ',''):'Não informado';}).slice(0,6),'#1a82e0');
-      const atdBars=bars(group(c=>c.atendente||'Sem atendente'),'#004a8a');
-      const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];const ab=[7,9,8,11,9,4,3],re=[5,8,6,9,8,3,2];const maxD=Math.max(...ab,...re);
-      const cols=dias.map((d,i)=>`<div class="c" title="Abertos ${ab[i]} · Resolvidos ${re[i]}"><div style="display:flex;gap:3px;align-items:flex-end;height:120px"><div style="width:9px;background:#7dd3fc;border-radius:4px 4px 0 0;height:${Math.round(ab[i]/maxD*120)}px"></div><div style="width:9px;background:var(--azul-600);border-radius:4px 4px 0 0;height:${Math.round(re[i]/maxD*120)}px"></div></div><div class="cl">${d}</div></div>`).join('');
-      const sat=[['5 estrelas',78],['4 estrelas',32],['3 estrelas',10],['2 estrelas',5],['1 estrela',3]];const satBars=bars(sat,'#f59e0b');
-      const pNp=Math.round(np/(np+vc+vi||1)*100),pVc=Math.round(vc/(np+vc+vi||1)*100);
-      const donut=`conic-gradient(var(--emerald-700) 0 ${pNp}%, #f59e0b ${pNp}% ${pNp+pVc}%, var(--rose-700) ${pNp+pVc}% 100%)`;
       document.getElementById('view-dashboard').innerHTML=`
         <div class="page-head"><div><h1>Dashboard</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
         <div class="dash-grid">${kpis.slice(0,4).map(kpiHtml).join('')}</div>
         <div class="dash-grid">${kpis.slice(4).map(kpiHtml).join('')}</div>
         <div class="dash-2">
-          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por status</h3>${statusBars}</div>
-          <div class="panel" style="padding:16px"><h3 class="dh">Abertos x Resolvidos (7 dias)</h3><div class="cols">${cols}</div><div class="legend" style="flex-direction:row;gap:16px;margin-top:8px"><span class="li"><span class="sq" style="background:#7dd3fc"></span>Abertos</span><span class="li"><span class="sq" style="background:var(--azul-600)"></span>Resolvidos</span></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Cumprimento de SLA</h3><div id="ec-sla" style="height:220px"></div><div class="legend" style="flex-direction:row;gap:14px;justify-content:center;margin-top:2px"><span class="li"><span class="sq" style="background:#059669"></span>No prazo (${np})</span><span class="li"><span class="sq" style="background:#f59e0b"></span>Vencendo (${vc})</span><span class="li"><span class="sq" style="background:#f43f5e"></span>Violado (${vi})</span></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Abertos x Resolvidos (7 dias)</h3><div id="ec-trend" style="height:240px"></div></div>
         </div>
         <div class="dash-2" style="margin-top:16px">
-          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por categoria</h3>${catBars}</div>
-          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por distrito</h3>${distBars}</div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por status</h3><div id="ec-status" style="height:240px"></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por distrito</h3><div id="ec-dist" style="height:240px"></div></div>
         </div>
         <div class="dash-2" style="margin-top:16px">
-          <div class="panel" style="padding:16px"><h3 class="dh">Carga por atendente</h3>${atdBars}</div>
-          <div class="panel" style="padding:16px"><h3 class="dh">Satisfação (distribuição)</h3>${satBars}<div class="muted" style="font-size:12px;margin-top:8px">Média 4,6 / 5 · 128 avaliações</div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por categoria</h3><div id="ec-cat" style="height:240px"></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Carga por atendente</h3><div id="ec-atd" style="height:240px"></div></div>
         </div>
         <div class="dash-2" style="margin-top:16px">
-          <div class="panel" style="padding:16px"><h3 class="dh">Cumprimento de SLA</h3><div style="display:flex;align-items:center;gap:18px"><div class="donut" style="background:${donut}"><div class="dc"><div><b>${slaPct}%</b><span>no prazo</span></div></div></div><div class="legend"><span class="li"><span class="sq" style="background:var(--emerald-700)"></span>No prazo (${np})</span><span class="li"><span class="sq" style="background:#f59e0b"></span>Vencendo (${vc})</span><span class="li"><span class="sq" style="background:var(--rose-700)"></span>Violado (${vi})</span></div></div></div>
-          <div class="panel" style="padding:16px"><h3 class="dh">Autoatendimento (assistente + base)</h3><div style="font-size:34px;font-weight:800;color:var(--emerald-700)">68%</div><div class="muted" style="font-size:12px">das dúvidas resolvidas sem abrir chamado</div><div class="bar-row" style="margin-top:10px"><span class="bl">Resolvido pelo assistente</span><span class="bt"><span class="bf" style="width:68%;background:var(--emerald-700)"></span></span><span class="bv">68%</span></div><div class="bar-row"><span class="bl">Virou chamado</span><span class="bt"><span class="bf" style="width:32%;background:var(--slate-400)"></span></span><span class="bv">32%</span></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Satisfação (distribuição)</h3><div id="ec-sat" style="height:210px"></div><div class="muted" style="font-size:12px;text-align:center">Média 4,6 / 5 · 128 avaliações</div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Autoatendimento (assistente + base)</h3><div id="ec-auto" style="height:200px"></div><div class="muted" style="font-size:12px;text-align:center">68% das dúvidas resolvidas sem abrir chamado</div></div>
         </div>`;
       icons();
+      if(!window.echarts){return;}
+      const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],ab=[7,9,8,11,9,4,3],re=[5,8,6,9,8,3,2];
+      ecInit('ec-sla',{series:[{type:'gauge',startAngle:200,endAngle:-20,min:0,max:100,radius:'100%',center:['50%','62%'],
+        progress:{show:true,width:14,roundCap:true,itemStyle:{color:slaPct>=90?'#059669':slaPct>=70?'#f59e0b':'#f43f5e'}},
+        axisLine:{lineStyle:{width:14,color:[[1,'#eef2f7']]}},pointer:{show:false},axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},anchor:{show:false},
+        title:{offsetCenter:[0,'36%'],color:'#64748b',fontSize:12},
+        detail:{valueAnimation:true,offsetCenter:[0,'4%'],fontSize:30,fontWeight:'bolder',formatter:'{value}%',color:'#0f172a'},
+        data:[{value:slaPct,name:'no prazo · meta 90%'}]}]});
+      const stOrder=['aberto','em_atendimento','aguardando_cidadao','resolvido','fechado'];
+      const stColors={aberto:'#38bdf8',em_atendimento:'#1a82e0',aguardando_cidadao:'#f59e0b',resolvido:'#059669',fechado:'#94a3b8'};
+      ecInit('ec-status',{tooltip:{trigger:'item',formatter:'{b}: {c}'},series:[{type:'funnel',sort:'none',minSize:'16%',top:8,bottom:8,left:'6%',right:'6%',gap:3,
+        label:{show:true,position:'inside',color:'#fff',fontSize:11,formatter:'{b}: {c}'},itemStyle:{borderWidth:0},
+        data:stOrder.map(k=>({name:STATUS[k].lbl,value:cnt(k),itemStyle:{color:stColors[k]}}))}]});
+      ecInit('ec-trend',{tooltip:{trigger:'axis'},legend:{data:['Abertos','Resolvidos'],bottom:0,icon:'roundRect',textStyle:{color:'#64748b'}},grid:{left:28,right:16,top:14,bottom:42,containLabel:true},
+        xAxis:{type:'category',data:dias,boundaryGap:false,axisTick:{show:false},axisLine:{lineStyle:{color:'#e2e8f0'}},axisLabel:{color:'#64748b',fontSize:11}},
+        yAxis:{type:'value',axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#64748b',fontSize:11},splitLine:{lineStyle:{color:'#f1f5f9'}}},
+        series:[
+          {name:'Abertos',type:'line',smooth:true,data:ab,symbolSize:7,lineStyle:{width:3,color:'#38bdf8'},itemStyle:{color:'#38bdf8'},areaStyle:{color:'rgba(56,189,248,.14)'}},
+          {name:'Resolvidos',type:'line',smooth:true,data:re,symbolSize:7,lineStyle:{width:3,color:'#005ca9'},itemStyle:{color:'#005ca9'},areaStyle:{color:'rgba(0,92,169,.14)'}}]});
+      const dist=group(c=>{const d=DISTRITOS.find(x=>x.bairro===c.bairro);return d?d.distrito.replace('Distrito Sanitário ','').replace(/^de /,''):'Não informado';});
+      const distPal=['#005ca9','#1a82e0','#4ca3fa','#85c2ff','#b8dbff','#94a3b8'];
+      ecInit('ec-dist',{tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},legend:{type:'scroll',orient:'vertical',right:4,top:'center',textStyle:{color:'#64748b',fontSize:11}},
+        series:[{type:'pie',radius:['42%','72%'],center:['34%','52%'],avoidLabelOverlap:true,itemStyle:{borderColor:'#fff',borderWidth:2},label:{show:false},
+          data:dist.map((x,i)=>({name:x[0],value:x[1],itemStyle:{color:distPal[i%distPal.length]}}))}]});
+      const cat=group(c=>c.categoria).slice(0,6),catN=cat.map(x=>x[0]).reverse(),catV=cat.map(x=>x[1]).reverse();
+      ecInit('ec-cat',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:8,right:28,top:8,bottom:6,containLabel:true},
+        xAxis:{type:'value',axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#64748b',fontSize:11},splitLine:{lineStyle:{color:'#f1f5f9'}}},
+        yAxis:{type:'category',data:catN,axisTick:{show:false},axisLine:{lineStyle:{color:'#e2e8f0'}},axisLabel:{color:'#475569',fontSize:11,width:140,overflow:'truncate'}},
+        series:[{type:'bar',data:catV,barWidth:'55%',itemStyle:{color:'#1a82e0',borderRadius:[0,6,6,0]},label:{show:true,position:'right',color:'#475569',fontSize:11}}]});
+      const atd=group(c=>c.atendente||'Sem atendente'),atdN=atd.map(x=>x[0].split(' ').slice(0,2).join(' ')),atdV=atd.map(x=>x[1]);
+      ecInit('ec-atd',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:8,right:10,top:18,bottom:6,containLabel:true},
+        xAxis:{type:'category',data:atdN,axisTick:{show:false},axisLine:{lineStyle:{color:'#e2e8f0'}},axisLabel:{color:'#475569',fontSize:11,interval:0}},
+        yAxis:{type:'value',axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#64748b',fontSize:11},splitLine:{lineStyle:{color:'#f1f5f9'}}},
+        series:[{type:'bar',data:atdV,barWidth:'46%',itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#1a82e0'},{offset:1,color:'#005ca9'}]),borderRadius:[6,6,0,0]},label:{show:true,position:'top',color:'#475569',fontSize:12,fontWeight:'bold'}}]});
+      const satN=['1 estrela','2 estrelas','3 estrelas','4 estrelas','5 estrelas'],satV=[3,5,10,32,78],satC=['#f43f5e','#fb923c','#f59e0b','#10b981','#059669'];
+      ecInit('ec-sat',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:8,right:30,top:6,bottom:6,containLabel:true},
+        xAxis:{type:'value',axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#64748b',fontSize:11},splitLine:{lineStyle:{color:'#f1f5f9'}}},
+        yAxis:{type:'category',data:satN,axisTick:{show:false},axisLine:{lineStyle:{color:'#e2e8f0'}},axisLabel:{color:'#475569',fontSize:11}},
+        series:[{type:'bar',barWidth:'56%',data:satV.map((v,i)=>({value:v,itemStyle:{color:satC[i],borderRadius:[0,6,6,0]}})),label:{show:true,position:'right',color:'#475569',fontSize:11}}]});
+      ecInit('ec-auto',{series:[{type:'gauge',startAngle:90,endAngle:-270,radius:'78%',center:['50%','50%'],
+        progress:{show:true,roundCap:true,width:16,itemStyle:{color:'#059669'}},axisLine:{lineStyle:{width:16,color:[[1,'#eef2f7']]}},
+        pointer:{show:false},axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},anchor:{show:false},title:{show:false},
+        detail:{offsetCenter:[0,0],fontSize:28,fontWeight:'bolder',formatter:'{value}%',color:'#0f172a'},data:[{value:68}]}]});
+      ecResizeBind();setTimeout(()=>{if(window.EC)Object.values(window.EC).forEach(c=>{try{c.resize();}catch(e){}});},80);
     }
+    function ecInit(id,opt){if(!window.echarts)return;const el=document.getElementById(id);if(!el)return;let c=echarts.getInstanceByDom(el);if(c)c.dispose();c=echarts.init(el);c.setOption(opt);window.EC=window.EC||{};window.EC[id]=c;}
+    let _ecResize=false;
+    function ecResizeBind(){if(_ecResize)return;_ecResize=true;window.addEventListener('resize',()=>{if(window.EC)Object.values(window.EC).forEach(c=>{try{c.resize();}catch(e){}});});}
 
     // ===================== Base de Conhecimento =====================
     function irKB(e){if(e)e.preventDefault();hideAll();document.getElementById('view-kb').classList.remove('hidden');setNav('nav-kb');document.getElementById('crumb').innerHTML='Atendimento <span>/ Base de Conhecimento</span>';renderKB();window.scrollTo(0,0);}
