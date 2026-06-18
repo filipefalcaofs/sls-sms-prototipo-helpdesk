@@ -1247,7 +1247,7 @@
       {kw:['dispensa de análise','dispensa de analise','aprovação automática','aprovacao automatica','liberada','automático','automatico'],r:`Conforme a <strong>parametrização da VISA</strong> e o <strong>grau de risco</strong>, a solicitação pode ter <strong>dispensa de análise</strong>: vai direto para <strong>Liberada</strong> e o DAM é gerado sem análise manual. Há também a <strong>aprovação automática de cadastro</strong> (por IA) quando os documentos estão conformes.`,e:'interno'},
       {kw:['acesso','senha','login','entrar','não consigo acessar','nao consigo acessar','recuperar','conta'],r:`No Portal, entre com <strong>CPF/CNPJ e senha</strong>. Esqueceu a senha? Use <strong>"Esqueci minha senha"</strong> com o e-mail cadastrado. Se não conseguir (e-mail desatualizado), abra um <strong>chamado sem login</strong> na categoria <em>Acesso ao portal</em> informando CPF/CNPJ e um e-mail de contato.`},
       {kw:['documento','pdf','anexo','arquivo','formato','tamanho','upload','rejeitado'],r:`Envie documentos em <strong>PDF, JPG ou PNG</strong>, com até <strong>2 MB</strong> por arquivo. Se um PDF for recusado, verifique se não está protegido por senha e reduza o tamanho. Em caso de <strong>correção</strong> solicitada pela VISA, reenvie pela tela indicada (Portal ou link do e-mail).`},
-      {kw:['distrito','região','regiao'],r:`Os <strong>distritos sanitários</strong> organizam o atendimento da VISA por região de Salvador. Um <strong>bairro pode pertencer a mais de um distrito</strong>, e o estabelecimento fica no distrito do seu endereço.`},
+      {kw:['distrito','região','regiao'],r:`Os <strong>distritos sanitários</strong> organizam o atendimento da VISA por região de Salvador. Um <strong>bairro pode pertencer a mais de um distrito</strong>, e o estabelecimento fica no distrito do seu endereço. Posso informar o <strong>distrito de qualquer bairro</strong> — pergunte, por exemplo, "qual distrito atende a Pituba?".`},
       {kw:['renovação','renovacao','renovar','revalidar','vencimento'],r:`A licença é renovada por <strong>exercício (ano)</strong>. A renovação gera uma <strong>nova solicitação</strong>, com novas <strong>TVS</strong> e <strong>DAM</strong>. Acompanhe o vencimento pelo Portal para não ficar irregular.`},
       {kw:['prazo','quanto tempo','demora','sla','tempo de análise','tempo de analise'],r:`Os prazos dependem do <strong>grau de risco</strong> e da fila de análise. Casos com <strong>dispensa de análise</strong>, <strong>MEI</strong> e <strong>baixo risco</strong> são praticamente <strong>imediatos</strong>. Os demais passam por análise da equipe.`},
       {kw:['analisar','deferir','indeferir','análise da solicitação','analise da solicitacao','pendência','pendencia','assumir solicitação'],e:'interno',r:`<strong>(Painel VISA)</strong> Na análise, o atendente <strong>assume</strong> a solicitação e decide: <strong>deferir</strong>, <strong>solicitar correção</strong> (pendência de documentos) ou <strong>indeferir</strong>. Ao deferir, os <strong>DAMs</strong> são gerados automaticamente. Solicitações com dispensa de análise já entram como <strong>Liberada</strong>.`},
@@ -1272,6 +1272,18 @@
       {tipo:'Responsável Técnico',nome:'Dra. Helena Martins',doc:'CRF-BA 12345',extra:'RT ativo'},
       {tipo:'Cidadão',nome:'Mariana Costa',doc:'CPF 042.918.735-20',extra:'cadastro ativo'},
     ];
+    const DISTRITOS=[
+      {bairro:'Pituba',distrito:'Distrito Sanitário Boca do Rio'},
+      {bairro:'Itapuã',distrito:'Distrito Sanitário de Itapuã'},
+      {bairro:'Valéria',distrito:'Distrito Sanitário de São Caetano/Valéria'},
+      {bairro:'Brotas',distrito:'Distrito Sanitário de Brotas'},
+      {bairro:'Cajazeiras',distrito:'Distrito Sanitário de Cajazeiras'},
+      {bairro:'Barra',distrito:'Distrito Sanitário Barra/Rio Vermelho'},
+      {bairro:'Liberdade',distrito:'Distrito Sanitário da Liberdade'},
+      {bairro:'Cabula',distrito:'Distrito Sanitário Cabula/Beiru'},
+      {bairro:'Pau da Lima',distrito:'Distrito Sanitário de Pau da Lima'},
+      {bairro:'Centro',distrito:'Distrito Sanitário Centro Histórico'},
+    ];
     function cbotProcHtml(p){return `<div class="cb-art" style="cursor:default;display:block"><div style="display:flex;align-items:center;gap:6px;color:var(--azul-700);font-weight:700"><i data-lucide="file-clock"></i> ${p.protocolo}</div><div style="margin-top:3px;color:var(--slate-700);font-weight:400">${p.tipo} · ${p.estabelecimento}</div><div style="margin-top:3px;color:var(--slate-600);font-weight:400"><strong>Status:</strong> ${p.status} — ${p.etapa}</div><div style="margin-top:2px;font-size:11px;color:var(--slate-400)">atualizado ${p.atualizado}</div></div>`;}
     function cbotConsulta(texto){
       const ctx=cbotContexto();const q=' '+texto.toLowerCase()+' ';const norm=s=>s.toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -1288,6 +1300,11 @@
         if(!p)return `Não localizei o protocolo <strong>${mP[0]}</strong>${ctx==='cidadao'?' nos seus processos':''}.`;
         if(ctx==='cidadao'&&!p.meu)return `Por <strong>privacidade (LGPD)</strong>, no Portal só posso mostrar processos vinculados ao seu cadastro. Esse protocolo não está nos seus registros.`;
         return cbotProcHtml(p);
+      }
+      if(/distrito/.test(q)){
+        const d=DISTRITOS.find(x=>q.includes(x.bairro.toLowerCase()));
+        if(d)return `O bairro <strong>${d.bairro}</strong> é atendido pelo <strong>${d.distrito}</strong>.${ctx==='servidor'?' Oriente o cidadão a acompanhar o processo por esse distrito.':''} Lembrando que um bairro pode pertencer a mais de um distrito.`;
+        if(/quais|qual|lista|todos|atende|pertence/.test(q))return 'Posso informar o distrito de qualquer bairro de Salvador. Diga o <strong>bairro</strong> — ex.: "qual distrito atende a Pituba?".';
       }
       const querCadastro=/(cadastrad|no sistema|existe no sistema|consultar o cadastro|localizar|verificar se)/.test(q);
       const querAndamento=/(andament|acompanh| status |protocolo)/.test(q)||/(minha|meu|meus|minhas)\s+(solicita|processo|pedido|chamado|alvar|licenc)/.test(q);
