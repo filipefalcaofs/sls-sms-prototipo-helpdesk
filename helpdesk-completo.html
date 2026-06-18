@@ -3,896 +3,601 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SIGVISA · Protótipo HelpDesk completo</title>
+  <title>SIGVISA · Central de Chamados (protótipo navegável)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --teal-50: #f0f7ff;
-      --teal-100: #e0efff;
-      --teal-400: #4ca3fa;
-      --teal-500: #1a82e0;
-      --teal-600: #005ca9;
-      --teal-700: #004a8a;
-      --teal-900: #00335e;
-      --slate-50: #f8fafc;
-      --slate-100: #f1f5f9;
-      --slate-200: #e2e8f0;
-      --slate-300: #cbd5e1;
-      --slate-400: #94a3b8;
-      --slate-500: #64748b;
-      --slate-600: #475569;
-      --slate-700: #334155;
-      --slate-800: #1e293b;
-      --slate-900: #0f172a;
-      --emerald-50: #ecfdf5;
-      --emerald-100: #d1fae5;
-      --emerald-700: #047857;
-      --amber-50: #fffbeb;
-      --amber-100: #fef3c7;
-      --amber-700: #b45309;
-      --rose-50: #fff1f2;
-      --rose-100: #ffe4e6;
-      --rose-700: #be123c;
-      --sky-50: #f0f9ff;
-      --sky-100: #e0f2fe;
-      --sky-700: #0369a1;
-      --page-dark: #0b1520;
-      --sidebar-from: #0f1e32;
-      --sidebar-to: #071525;
-      --font: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      --azul-50:#f0f7ff; --azul-100:#e0efff; --azul-200:#b8dbff; --azul-400:#4ca3fa;
+      --azul-500:#1a82e0; --azul-600:#005ca9; --azul-700:#004a8a; --azul-900:#00335e;
+      --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+      --slate-400:#94a3b8; --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-900:#0f172a;
+      --emerald-50:#ecfdf5; --emerald-100:#d1fae5; --emerald-700:#047857;
+      --amber-50:#fffbeb; --amber-100:#fef3c7; --amber-700:#b45309;
+      --rose-50:#fff1f2; --rose-100:#ffe4e6; --rose-700:#be123c;
+      --sky-50:#f0f9ff; --sky-100:#e0f2fe; --sky-700:#0369a1;
+      --sb:#0f1e32; --sb2:#071525;
+      --radius:12px;
+      font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
     }
+    *{box-sizing:border-box;}
+    body{margin:0;background:var(--slate-50);color:var(--slate-900);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+    button{font-family:inherit;cursor:pointer;}
+    a{color:inherit;text-decoration:none;}
 
-    * { box-sizing: border-box; }
-    html { color-scheme: light; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--slate-50);
-      color: var(--slate-900);
-      font: 15px/1.5 var(--font);
-      -webkit-font-smoothing: antialiased;
-    }
-    button, input, textarea, select { font: inherit; }
-    button { cursor: pointer; }
-    .app {
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 85% 8%, rgba(0,92,169,.10), transparent 30%),
-        linear-gradient(180deg, #f8fafc 0%, #eef5fb 100%);
-      transition: background 180ms ease, color 180ms ease;
-    }
-    .app.dark {
-      color: var(--slate-100);
-      background:
-        radial-gradient(circle at 82% 9%, rgba(76,163,250,.16), transparent 30%),
-        linear-gradient(135deg, var(--page-dark), #07111f 72%);
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 268px minmax(0, 1fr);
-      min-height: 100vh;
-    }
-    .sidebar {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 18px 14px;
-      color: #fff;
-      background: linear-gradient(180deg, var(--sidebar-from), var(--sidebar-to));
-      border-right: 1px solid rgba(255,255,255,.06);
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding: 4px 8px 18px;
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
-    .brand-mark, .assistant-mark {
-      display: grid;
-      place-items: center;
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--teal-500), var(--teal-700));
-      box-shadow: 0 14px 30px rgba(0,92,169,.28);
-      color: #fff;
-      font-weight: 800;
-    }
-    .brand strong { display: block; font-size: 16px; line-height: 1; letter-spacing: -.02em; }
-    .brand span { display: block; margin-top: 4px; color: rgba(255,255,255,.55); font-size: 11px; }
-    .menu { display: grid; gap: 6px; padding: 18px 0; }
-    .menu-title {
-      padding: 14px 10px 4px;
-      color: rgba(255,255,255,.42);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .10em;
-      text-transform: uppercase;
-    }
-    .menu button {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 40px;
-      border: 0;
-      border-radius: 10px;
-      padding: 0 10px;
-      color: rgba(255,255,255,.72);
-      background: transparent;
-      text-align: left;
-      font-weight: 650;
-    }
-    .menu button.active, .menu button:hover {
-      color: #fff;
-      background: rgba(255,255,255,.08);
-    }
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.72);
-      font-size: 12px;
-    }
-    .main { min-width: 0; }
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      height: 62px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      border-bottom: 1px solid var(--slate-200);
-      background: rgba(255,255,255,.86);
-      backdrop-filter: blur(14px);
-    }
-    .app.dark .topbar {
-      border-color: rgba(148,163,184,.18);
-      background: rgba(30,41,59,.82);
-    }
-    .topbar h1 {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1;
-      letter-spacing: -.02em;
-    }
-    .topbar p { margin: 5px 0 0; color: var(--slate-500); font-size: 12px; }
-    .app.dark .topbar p { color: var(--slate-400); }
-    .top-actions { display: flex; align-items: center; gap: 10px; }
-    .icon-btn, .soft-btn, .primary-btn {
-      min-height: 38px;
-      border-radius: 10px;
-      font-weight: 760;
-      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
-    }
-    .icon-btn {
-      width: 38px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--slate-200);
-      color: var(--slate-600);
-      background: #fff;
-    }
-    .app.dark .icon-btn {
-      border-color: rgba(148,163,184,.18);
-      color: var(--slate-200);
-      background: rgba(15,23,42,.8);
-    }
-    .soft-btn {
-      border: 1px solid var(--slate-200);
-      padding: 0 14px;
-      color: var(--slate-700);
-      background: #fff;
-    }
-    .primary-btn {
-      border: 0;
-      padding: 0 16px;
-      color: #fff;
-      background: var(--teal-600);
-      box-shadow: 0 12px 24px rgba(0,92,169,.20);
-    }
-    .primary-btn:hover { background: var(--teal-500); }
-    .icon-btn:active, .soft-btn:active, .primary-btn:active { transform: scale(.98); }
-    .content { padding: 28px; }
-    .tabs {
-      display: inline-flex;
-      gap: 4px;
-      padding: 4px;
-      margin-bottom: 18px;
-      border: 1px solid var(--slate-200);
-      border-radius: 14px;
-      background: rgba(255,255,255,.82);
-    }
-    .app.dark .tabs {
-      border-color: rgba(148,163,184,.18);
-      background: rgba(15,23,42,.55);
-    }
-    .tabs button {
-      border: 0;
-      border-radius: 10px;
-      padding: 9px 13px;
-      color: var(--slate-600);
-      background: transparent;
-      font-weight: 760;
-    }
-    .tabs button.active {
-      color: var(--teal-700);
-      background: var(--teal-50);
-    }
-    .app.dark .tabs button { color: var(--slate-300); }
-    .app.dark .tabs button.active {
-      color: var(--teal-400);
-      background: rgba(76,163,250,.12);
-    }
-    .view { display: none; }
-    .view.active { display: block; }
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-    .metric, .panel, .ticket-card, .detail-card {
-      border: 1px solid var(--slate-200);
-      border-radius: 16px;
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 10px 28px rgba(15,23,42,.06);
-    }
-    .app.dark .metric, .app.dark .panel, .app.dark .ticket-card, .app.dark .detail-card {
-      border-color: rgba(148,163,184,.18);
-      background: rgba(30,41,59,.86);
-      box-shadow: none;
-    }
-    .metric { padding: 16px; }
-    .metric span {
-      display: block;
-      color: var(--slate-500);
-      font-size: 12px;
-      font-weight: 760;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-    .metric strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 30px;
-      line-height: 1;
-      letter-spacing: -.03em;
-    }
-    .metric small { color: var(--slate-500); font-size: 12px; }
-    .panel { padding: 18px; }
-    .panel-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 14px;
-    }
-    .eyebrow {
-      color: var(--teal-700);
-      font-size: 12px;
-      font-weight: 850;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .app.dark .eyebrow { color: var(--teal-400); }
-    h2, h3 { margin: 0; letter-spacing: -.02em; }
-    h2 { font-size: 22px; line-height: 1.15; }
-    h3 { font-size: 15px; }
-    .muted { color: var(--slate-500); }
-    .app.dark .muted { color: var(--slate-400); }
-    .filters {
-      display: grid;
-      grid-template-columns: 1.5fr repeat(4, minmax(130px, .7fr));
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .field {
-      min-height: 40px;
-      width: 100%;
-      border: 1px solid var(--slate-200);
-      border-radius: 10px;
-      padding: 0 12px;
-      color: var(--slate-900);
-      background: #fff;
-      outline: none;
-    }
-    textarea.field { min-height: 92px; padding: 10px 12px; resize: vertical; }
-    .field:focus {
-      border-color: var(--teal-600);
-      box-shadow: 0 0 0 3px rgba(0,92,169,.12);
-    }
-    .app.dark .field {
-      border-color: rgba(148,163,184,.18);
-      color: var(--slate-100);
-      background: rgba(15,23,42,.72);
-    }
-    .queue {
-      display: grid;
-      grid-template-columns: minmax(0, .95fr) minmax(360px, .72fr);
-      gap: 16px;
-      align-items: start;
-    }
-    .ticket-list { display: grid; gap: 10px; }
-    .ticket-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 14px;
-      align-items: center;
-      border: 1px solid var(--slate-200);
-      border-radius: 14px;
-      padding: 14px;
-      background: #fff;
-      text-align: left;
-    }
-    .ticket-row.active, .ticket-row:hover {
-      border-color: rgba(0,92,169,.35);
-      box-shadow: 0 10px 24px rgba(0,92,169,.09);
-    }
-    .app.dark .ticket-row {
-      border-color: rgba(148,163,184,.18);
-      background: rgba(15,23,42,.55);
-    }
-    .ticket-main {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .protocol {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--slate-500);
-    }
-    .subject {
-      display: block;
-      color: inherit;
-      font-weight: 800;
-      line-height: 1.25;
-    }
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      color: var(--slate-500);
-      font-size: 12px;
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      min-height: 24px;
-      border-radius: 999px;
-      padding: 0 9px;
-      font-size: 11px;
-      font-weight: 850;
-      white-space: nowrap;
-    }
-    .b-teal { background: var(--teal-100); color: var(--teal-700); }
-    .b-sky { background: var(--sky-100); color: var(--sky-700); }
-    .b-emerald { background: var(--emerald-100); color: var(--emerald-700); }
-    .b-amber { background: var(--amber-100); color: var(--amber-700); }
-    .b-rose { background: var(--rose-100); color: var(--rose-700); }
-    .b-slate { background: var(--slate-100); color: var(--slate-600); }
-    .app.dark .b-teal { background: rgba(76,163,250,.16); color: var(--teal-400); }
-    .app.dark .b-sky { background: rgba(2,132,199,.16); color: #7dd3fc; }
-    .app.dark .b-emerald { background: rgba(5,150,105,.16); color: #6ee7b7; }
-    .app.dark .b-amber { background: rgba(245,158,11,.17); color: #fcd34d; }
-    .app.dark .b-rose { background: rgba(225,29,72,.17); color: #fda4af; }
-    .app.dark .b-slate { background: rgba(148,163,184,.14); color: var(--slate-300); }
-    .detail-card { overflow: hidden; }
-    .detail-top {
-      padding: 18px;
-      border-bottom: 1px solid var(--slate-200);
-      background: linear-gradient(180deg, var(--teal-50), #fff);
-    }
-    .app.dark .detail-top {
-      border-color: rgba(148,163,184,.18);
-      background: linear-gradient(180deg, rgba(0,92,169,.18), rgba(30,41,59,.72));
-    }
-    .detail-body { padding: 18px; }
-    .thread { display: grid; gap: 12px; margin-bottom: 16px; }
-    .message {
-      display: grid;
-      grid-template-columns: 34px minmax(0, 1fr);
-      gap: 10px;
-    }
-    .avatar {
-      display: grid;
-      place-items: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      background: var(--slate-100);
-      color: var(--slate-700);
-      font-weight: 850;
-      font-size: 12px;
-    }
-    .bubble {
-      border-radius: 16px;
-      padding: 11px 12px;
-      background: var(--slate-100);
-      color: var(--slate-900);
-    }
-    .app.dark .bubble {
-      background: rgba(15,23,42,.72);
-      color: var(--slate-100);
-    }
-    .note .bubble {
-      border: 1px solid rgba(180,83,9,.32);
-      background: var(--amber-50);
-      color: var(--amber-800);
-    }
-    .reply-tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .reply-tabs button {
-      border: 1px solid var(--slate-200);
-      border-radius: 9px;
-      padding: 7px 10px;
-      color: var(--slate-600);
-      background: #fff;
-      font-weight: 750;
-      font-size: 12px;
-    }
-    .reply-tabs button.active {
-      border-color: rgba(0,92,169,.28);
-      color: var(--teal-700);
-      background: var(--teal-50);
-    }
-    .side-grid {
-      display: grid;
-      gap: 12px;
-    }
-    .info-box {
-      border: 1px solid var(--slate-200);
-      border-radius: 14px;
-      padding: 14px;
-      background: rgba(248,250,252,.76);
-    }
-    .app.dark .info-box {
-      border-color: rgba(148,163,184,.18);
-      background: rgba(15,23,42,.48);
-    }
-    .info-box dl {
-      display: grid;
-      grid-template-columns: 110px minmax(0, 1fr);
-      gap: 8px 10px;
-      margin: 10px 0 0;
-      font-size: 13px;
-    }
-    .info-box dt { color: var(--slate-500); }
-    .info-box dd { margin: 0; font-weight: 700; }
-    .portal-grid {
-      display: grid;
-      grid-template-columns: minmax(0, .85fr) minmax(320px, .48fr);
-      gap: 16px;
-      align-items: start;
-    }
-    .portal-cards {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-    .ticket-card { padding: 16px; }
-    .ticket-card .subject { margin: 9px 0 8px; font-size: 16px; }
-    .card-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid var(--slate-200);
-    }
-    .app.dark .card-actions { border-color: rgba(148,163,184,.18); }
-    .form-grid { display: grid; gap: 11px; }
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .dropzone {
-      display: grid;
-      place-items: center;
-      min-height: 86px;
-      border: 1.5px dashed var(--slate-300);
-      border-radius: 14px;
-      color: var(--slate-500);
-      background: var(--slate-50);
-      text-align: center;
-      font-size: 13px;
-    }
-    .app.dark .dropzone {
-      border-color: rgba(148,163,184,.28);
-      background: rgba(15,23,42,.48);
-    }
-    .help-widget {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      z-index: 60;
-      width: min(390px, calc(100vw - 32px));
-      border: 1px solid var(--slate-200);
-      border-radius: 20px;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(15,23,42,.24);
-    }
-    .app.dark .help-widget {
-      border-color: rgba(148,163,184,.18);
-      background: var(--slate-800);
-    }
-    .help-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 14px;
-      color: #fff;
-      background: var(--teal-600);
-    }
-    .help-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .help-title strong { display: block; line-height: 1; }
-    .help-title span { display: block; margin-top: 3px; font-size: 11px; opacity: .82; }
-    .help-body { display: grid; gap: 10px; max-height: 310px; overflow: auto; padding: 14px; }
-    .chat-line {
-      max-width: 82%;
-      border-radius: 16px;
-      padding: 10px 12px;
-      background: var(--slate-100);
-      color: var(--slate-900);
-      font-size: 13px;
-    }
-    .chat-line.user {
-      justify-self: end;
-      color: #fff;
-      background: var(--teal-600);
-    }
-    .source {
-      border-radius: 12px;
-      padding: 9px 10px;
-      color: var(--sky-700);
-      background: var(--sky-50);
-      font-size: 12px;
-      font-weight: 750;
-    }
-    .help-foot {
-      display: grid;
-      gap: 8px;
-      padding: 12px;
-      border-top: 1px solid var(--slate-200);
-    }
-    .help-input {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 38px;
-      gap: 8px;
-    }
-    .disclaimer { color: var(--slate-500); font-size: 11px; }
-    .fab {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      z-index: 59;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      min-height: 58px;
-      border: 0;
-      border-radius: 999px;
-      padding: 0 18px;
-      color: #fff;
-      background: var(--teal-600);
-      box-shadow: 0 18px 42px rgba(0,92,169,.32);
-      font-weight: 800;
-    }
-    .help-widget.closed { display: none; }
-    .fab.visible { display: inline-flex; }
+    .app{display:flex;min-height:100vh;}
 
-    @media (max-width: 1080px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { position: static; height: auto; border-right: 0; }
-      .menu { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .metrics, .filters, .queue, .portal-grid { grid-template-columns: 1fr; }
-      .portal-cards { grid-template-columns: 1fr; }
+    /* ---------- Sidebar ---------- */
+    .sidebar{width:248px;flex:0 0 248px;background:linear-gradient(180deg,var(--sb),var(--sb2));color:#cdd9ea;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+    .brand{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;}
+    .brand .mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--azul-500),var(--azul-700));box-shadow:0 10px 22px rgba(0,92,169,.35);}
+    .brand strong{display:block;color:#fff;font-size:15px;letter-spacing:-.01em;}
+    .brand span{display:block;font-size:11px;color:#8aa0bd;margin-top:2px;}
+    .nav{padding:8px;overflow:auto;flex:1;}
+    .nav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#6c83a3;padding:14px 12px 6px;}
+    .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:#b9c8dd;font-weight:500;margin-bottom:2px;}
+    .nav a:hover{background:rgba(255,255,255,.06);color:#fff;}
+    .nav a.active{background:rgba(26,130,224,.18);color:#fff;box-shadow:inset 2px 0 0 var(--azul-400);}
+    .nav a svg{width:17px;height:17px;}
+    .nav a .count{margin-left:auto;background:rgba(255,255,255,.12);color:#dce7f5;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;}
+    .sb-user{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);}
+    .sb-user .av{width:32px;height:32px;border-radius:50%;background:var(--azul-600);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;}
+    .sb-user .nm{font-size:13px;color:#fff;font-weight:600;line-height:1.2;}
+    .sb-user .rl{font-size:11px;color:#8aa0bd;}
+
+    /* ---------- Main ---------- */
+    .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+    .topbar{height:58px;background:#fff;border-bottom:1px solid var(--slate-200);display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:20;}
+    .topbar .crumb{font-weight:600;color:var(--slate-700);}
+    .topbar .crumb span{color:var(--slate-400);font-weight:500;}
+    .topbar .spacer{flex:1;}
+    .gsearch{position:relative;width:300px;max-width:38vw;}
+    .gsearch svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--slate-400);}
+    .gsearch input{width:100%;height:36px;border:1px solid var(--slate-200);background:var(--slate-50);border-radius:9px;padding:0 12px 0 32px;font-size:13px;outline:none;}
+    .gsearch input:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.15);background:#fff;}
+    .icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--slate-200);background:#fff;display:grid;place-items:center;color:var(--slate-500);position:relative;}
+    .icon-btn:hover{background:var(--slate-50);color:var(--azul-700);}
+    .icon-btn svg{width:18px;height:18px;}
+    .bell-dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e11d48;color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;}
+
+    .content{padding:22px;}
+    .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;}
+    .page-head h1{margin:0;font-size:20px;letter-spacing:-.02em;}
+    .page-head p{margin:4px 0 0;color:var(--slate-500);font-size:13px;}
+
+    .btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:9px;font-weight:600;font-size:13px;border:1px solid transparent;background:var(--azul-600);color:#fff;}
+    .btn:hover{background:var(--azul-500);}
+    .btn svg{width:16px;height:16px;}
+    .btn.sec{background:#fff;color:var(--slate-700);border-color:var(--slate-200);}
+    .btn.sec:hover{background:var(--slate-50);border-color:var(--slate-300);}
+    .btn.ghost{background:transparent;color:var(--slate-600);border-color:transparent;}
+    .btn.ghost:hover{background:var(--slate-100);}
+    .btn.sm{height:30px;padding:0 10px;font-size:12px;}
+    .btn[disabled]{opacity:.5;cursor:not-allowed;}
+
+    /* ---------- Metrics ---------- */
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .metric{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);padding:14px 16px;}
+    .metric .lbl{font-size:12px;color:var(--slate-500);font-weight:500;display:flex;align-items:center;gap:7px;}
+    .metric .lbl .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;}
+    .metric .val{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:6px;}
+    .metric .hint{font-size:11px;color:var(--slate-400);margin-top:2px;}
+
+    /* ---------- Tabs + Filters ---------- */
+    .panel{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);overflow:hidden;}
+    .tabs{display:flex;gap:2px;padding:8px 10px 0;border-bottom:1px solid var(--slate-200);}
+    .tab{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:0;background:transparent;color:var(--slate-500);font-weight:600;font-size:13px;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0;}
+    .tab:hover{color:var(--slate-800);background:var(--slate-50);}
+    .tab.active{color:var(--azul-700);border-bottom-color:var(--azul-600);}
+    .tab .cnt{background:var(--slate-100);color:var(--slate-600);border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px;}
+    .tab.active .cnt{background:var(--azul-100);color:var(--azul-700);}
+
+    .filters{display:flex;align-items:center;gap:10px;padding:12px;flex-wrap:wrap;border-bottom:1px solid var(--slate-200);background:var(--slate-50);}
+    .fsearch{position:relative;flex:1;min-width:200px;}
+    .fsearch svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--slate-400);}
+    .fsearch input{width:100%;height:34px;border:1px solid var(--slate-200);border-radius:8px;padding:0 10px 0 30px;font-size:13px;outline:none;background:#fff;}
+    .fsearch input:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.12);}
+    select.f{height:34px;border:1px solid var(--slate-200);border-radius:8px;padding:0 28px 0 10px;font-size:13px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 8px center;appearance:none;color:var(--slate-700);outline:none;}
+    select.f:focus{border-color:var(--azul-500);}
+    .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--slate-600);font-weight:500;user-select:none;}
+    .chk input{width:15px;height:15px;accent-color:var(--azul-600);}
+
+    /* ---------- Table ---------- */
+    table{width:100%;border-collapse:collapse;}
+    thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--slate-200);background:#fff;white-space:nowrap;}
+    tbody td{padding:11px 14px;border-bottom:1px solid var(--slate-100);vertical-align:middle;}
+    tbody tr{cursor:pointer;}
+    tbody tr:hover{background:var(--azul-50);}
+    .proto{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:700;color:var(--azul-700);}
+    .subj{font-weight:600;color:var(--slate-900);}
+    .sub2{font-size:12px;color:var(--slate-400);margin-top:2px;}
+    .req .nm{font-weight:500;}
+    .req .doc{font-size:12px;color:var(--slate-400);}
+    .muted{color:var(--slate-400);}
+    .right{text-align:right;}
+
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+    .b-sky{background:var(--sky-100);color:var(--sky-700);}
+    .b-azul{background:var(--azul-100);color:var(--azul-700);}
+    .b-amber{background:var(--amber-100);color:var(--amber-700);}
+    .b-emerald{background:var(--emerald-100);color:var(--emerald-700);}
+    .b-slate{background:var(--slate-100);color:var(--slate-600);}
+    .b-rose{background:var(--rose-100);color:var(--rose-700);}
+    .badge svg{width:13px;height:13px;}
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+
+    .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:11px;background:var(--azul-100);color:var(--azul-700);flex:0 0 auto;}
+    .assignee{display:inline-flex;align-items:center;gap:8px;}
+
+    .tbl-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;color:var(--slate-500);font-size:12px;}
+
+    .empty{padding:48px 20px;text-align:center;color:var(--slate-500);}
+    .empty svg{width:34px;height:34px;color:var(--slate-300);}
+
+    /* ---------- Detail ---------- */
+    .detail-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+    .detail-head .ttl h1{font-size:18px;margin:0 0 6px;letter-spacing:-.01em;}
+    .detail-head .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+    .detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start;}
+
+    .thread{display:flex;flex-direction:column;gap:14px;}
+    .msg{border:1px solid var(--slate-200);border-radius:var(--radius);padding:14px 16px;background:#fff;}
+    .msg.cidadao{}
+    .msg.atendente{border-color:var(--azul-200);background:linear-gradient(0deg,#fff,var(--azul-50));}
+    .msg.interna{border-color:var(--amber-100);background:var(--amber-50);}
+    .msg .mhead{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .msg .mhead .nm{font-weight:700;font-size:13px;}
+    .msg .mhead .dt{font-size:12px;color:var(--slate-400);margin-left:auto;}
+    .msg .tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--amber-700);background:var(--amber-100);padding:2px 7px;border-radius:6px;}
+    .msg .body{color:var(--slate-700);font-size:13.5px;}
+    .att{display:inline-flex;align-items:center;gap:6px;margin-top:10px;border:1px solid var(--slate-200);border-radius:8px;padding:5px 9px;font-size:12px;color:var(--slate-600);background:var(--slate-50);}
+    .att svg{width:14px;height:14px;color:var(--slate-400);}
+
+    .composer{margin-top:16px;border:1px solid var(--slate-200);border-radius:var(--radius);overflow:hidden;background:#fff;}
+    .composer .ctabs{display:flex;gap:2px;padding:8px 10px 0;border-bottom:1px solid var(--slate-200);}
+    .composer textarea{width:100%;border:0;outline:none;resize:vertical;min-height:96px;padding:14px;font-family:inherit;font-size:13.5px;color:var(--slate-800);}
+    .composer .cfoot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--slate-200);background:var(--slate-50);}
+    .composer .cfoot .spacer{flex:1;}
+
+    .side{display:flex;flex-direction:column;gap:14px;}
+    .card{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);}
+    .card h3{margin:0;padding:12px 14px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500);border-bottom:1px solid var(--slate-100);}
+    .card .bd{padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+    .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-400);font-weight:600;margin-bottom:5px;}
+    .field select{width:100%;height:36px;border:1px solid var(--slate-200);border-radius:8px;padding:0 28px 0 10px;font-size:13px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 8px center;appearance:none;color:var(--slate-700);outline:none;}
+    .field select:focus{border-color:var(--azul-500);}
+    .kv{display:flex;flex-direction:column;gap:3px;}
+    .kv .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-400);font-weight:600;}
+    .kv .v{font-size:13.5px;color:var(--slate-800);font-weight:500;}
+    .kv .v a{color:var(--azul-700);}
+    .sla-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+    .sla-row .k{color:var(--slate-500);}
+
+    /* ---------- Modal ---------- */
+    .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+    .overlay.open{display:flex;}
+    .modal{background:#fff;border-radius:16px;width:560px;max-width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 70px rgba(15,23,42,.3);}
+    .modal .mh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--slate-200);}
+    .modal .mh h2{margin:0;font-size:16px;}
+    .modal .mb{padding:18px;display:flex;flex-direction:column;gap:14px;}
+    .modal .mf{padding:14px 18px;border-top:1px solid var(--slate-200);display:flex;justify-content:flex-end;gap:10px;background:var(--slate-50);}
+    .inp{width:100%;height:38px;border:1px solid var(--slate-200);border-radius:9px;padding:0 11px;font-size:13.5px;outline:none;font-family:inherit;}
+    .inp:focus{border-color:var(--azul-500);box-shadow:0 0 0 3px rgba(26,130,224,.12);}
+    textarea.inp{height:auto;padding:10px 11px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+    /* toast */
+    .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-900);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:60;box-shadow:0 16px 40px rgba(0,0,0,.25);}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    .hidden{display:none !important;}
+
+    @media (max-width:1024px){
+      .detail-grid{grid-template-columns:1fr;}
+      .metrics{grid-template-columns:repeat(2,1fr);}
     }
-    @media (max-width: 640px) {
-      .topbar, .content { padding-left: 16px; padding-right: 16px; }
-      .topbar { height: auto; min-height: 64px; align-items: flex-start; padding-top: 12px; padding-bottom: 12px; }
-      .top-actions { flex-wrap: wrap; justify-content: flex-end; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .panel { padding: 14px; }
-      .two, .info-box dl { grid-template-columns: 1fr; }
-      .help-widget {
-        inset: 0;
-        width: auto;
-        border-radius: 0;
-      }
-      .help-body { max-height: calc(100vh - 190px); }
-      .fab { right: 16px; bottom: 16px; }
+    @media (max-width:760px){
+      .sidebar{display:none;}
+      .gsearch{display:none;}
     }
   </style>
 </head>
 <body>
-  <main class="app" id="app">
-    <div class="layout">
-      <aside class="sidebar" aria-label="Navegação do Painel VISA">
-        <div class="brand">
-          <div class="brand-mark">SV</div>
-          <div>
-            <strong>SIGVISA</strong>
-            <span>SMS Salvador · DVIS</span>
-          </div>
-        </div>
-        <nav class="menu">
-          <div class="menu-title">Licenciamento</div>
-          <button type="button">▣ Dashboard</button>
-          <button type="button">▣ Solicitações</button>
-          <button type="button" class="active">◉ Central de Chamados</button>
-          <button type="button">▣ Alvarás e DAM</button>
-          <div class="menu-title">Sistema</div>
-          <button type="button">▣ Relatórios</button>
-          <button type="button">▣ Configurações</button>
-        </nav>
-        <div class="sidebar-footer">
-          Protótipo focado no HelpDesk: fila compartilhada, atendimento, portal do cidadão e assistente de suporte.
-        </div>
-      </aside>
-
-      <section class="main">
-        <header class="topbar">
-          <div>
-            <h1>Central de Chamados</h1>
-            <p>Atendimento do cidadão e chamados internos da equipe VISA em um fluxo único.</p>
-          </div>
-          <div class="top-actions">
-            <button class="soft-btn" type="button" data-view="painel">Painel VISA</button>
-            <button class="soft-btn" type="button" data-view="portal">Portal do Cidadão</button>
-            <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema">◐</button>
-          </div>
-        </header>
-
-        <div class="content">
-          <div class="tabs" role="tablist" aria-label="Áreas do HelpDesk">
-            <button class="active" type="button" data-view="painel">Fila do atendente</button>
-            <button type="button" data-view="portal">Meus chamados no portal</button>
-          </div>
-
-          <section class="view active" id="view-painel" aria-label="Fila de chamados do Painel VISA">
-            <div class="metrics">
-              <article class="metric"><span>Abertos</span><strong>24</strong><small>7 não atribuídos</small></article>
-              <article class="metric"><span>Em atendimento</span><strong>12</strong><small>4 com resposta pendente</small></article>
-              <article class="metric"><span>Aguardando cidadão</span><strong>8</strong><small>média de 16h</small></article>
-              <article class="metric"><span>SLA violado</span><strong>3</strong><small class="muted">prioridade alta</small></article>
-            </div>
-
-            <div class="queue">
-              <section class="panel">
-                <div class="panel-head">
-                  <div>
-                    <div class="eyebrow">Fila compartilhada</div>
-                    <h2>Chamados para triagem</h2>
-                  </div>
-                  <button class="primary-btn" type="button">Abrir chamado interno</button>
-                </div>
-                <div class="filters">
-                  <input class="field" value="DAM alvará" aria-label="Busca por chamado" />
-                  <select class="field" aria-label="Status"><option>Status</option><option>Aberto</option><option>Em atendimento</option></select>
-                  <select class="field" aria-label="Prioridade"><option>Prioridade</option><option>Alta</option><option>Urgente</option></select>
-                  <select class="field" aria-label="Categoria"><option>Categoria</option><option>DAM/pagamento</option></select>
-                  <select class="field" aria-label="Atendente"><option>Não atribuídos</option><option>Ana Luísa</option></select>
-                </div>
-                <div class="ticket-list">
-                  <button class="ticket-row active" type="button" data-ticket="dam">
-                    <span>
-                      <span class="ticket-main">
-                        <span class="protocol">CH-2026-000184</span>
-                        <span class="badge b-amber">Vence em 2h</span>
-                        <span class="badge b-rose">Urgente</span>
-                      </span>
-                      <span class="subject">Paguei o DAM, mas ele não baixou e minha vistoria é amanhã</span>
-                      <span class="meta"><span>Maria de Lourdes · Pituba</span><span>Problema no DAM/pagamento</span><span>sem atendente</span></span>
-                    </span>
-                    <span class="primary-btn">Assumir</span>
-                  </button>
-                  <button class="ticket-row" type="button" data-ticket="pdf">
-                    <span>
-                      <span class="ticket-main">
-                        <span class="protocol">CH-2026-000173</span>
-                        <span class="badge b-emerald">No prazo</span>
-                        <span class="badge b-sky">Média</span>
-                      </span>
-                      <span class="subject">Erro ao enviar documento PDF no pedido de renovação</span>
-                      <span class="meta"><span>Farmácia Saúde Total · Itapuã</span><span>Documentação</span><span>Ana Luísa</span></span>
-                    </span>
-                    <span class="soft-btn">Ver</span>
-                  </button>
-                  <button class="ticket-row" type="button" data-ticket="interno">
-                    <span>
-                      <span class="ticket-main">
-                        <span class="protocol">CH-2026-000169</span>
-                        <span class="badge b-rose">Violado</span>
-                        <span class="badge b-amber">Alta</span>
-                      </span>
-                      <span class="subject">Solicito acesso ao módulo de relatórios por distrito</span>
-                      <span class="meta"><span>Rafael Nascimento · Fiscal VISA</span><span>Solicitação de acesso</span><span>Suporte TI</span></span>
-                    </span>
-                    <span class="soft-btn">Ver</span>
-                  </button>
-                </div>
-              </section>
-
-              <aside class="detail-card" aria-label="Detalhe do chamado selecionado">
-                <div class="detail-top">
-                  <div class="ticket-main">
-                    <span class="protocol">CH-2026-000184</span>
-                    <span class="badge b-amber">Aberto</span>
-                    <span class="badge b-rose">SLA vence em 2h</span>
-                  </div>
-                  <h2>Paguei o DAM, mas ele não baixou</h2>
-                  <p class="muted">Chamado do cidadão vinculado ao estabelecimento Farmácia Saúde Total.</p>
-                </div>
-                <div class="detail-body">
-                  <div class="thread">
-                    <div class="message">
-                      <span class="avatar">ML</span>
-                      <p class="bubble">Paguei o DAM ontem, mas o sistema ainda mostra pendente. Minha vistoria está marcada para amanhã.</p>
-                    </div>
-                    <div class="message">
-                      <span class="avatar">AS</span>
-                      <p class="bubble">Entendi. Vou verificar a confirmação de pagamento e orientar os próximos passos.</p>
-                    </div>
-                    <div class="message note">
-                      <span class="avatar">IN</span>
-                      <p class="bubble"><strong>Nota interna:</strong> conferir baixa junto à SEFAZ antes de prometer liberação.</p>
-                    </div>
-                  </div>
-                  <div class="reply-tabs">
-                    <button class="active" type="button">Resposta ao cidadão</button>
-                    <button type="button">Nota interna</button>
-                  </div>
-                  <textarea class="field" aria-label="Resposta ao cidadão">Olá, Maria. Vamos verificar a baixa do pagamento e retornaremos neste chamado ainda hoje.</textarea>
-                  <div class="card-actions">
-                    <button class="soft-btn" type="button">Anexar arquivo</button>
-                    <button class="primary-btn" type="button">Enviar resposta</button>
-                  </div>
-                  <div class="side-grid" style="margin-top: 14px;">
-                    <section class="info-box">
-                      <h3>Solicitante</h3>
-                      <dl>
-                        <dt>Nome</dt><dd>Maria de Lourdes Santos</dd>
-                        <dt>Contato</dt><dd>maria.santos@email.com</dd>
-                        <dt>Vínculo</dt><dd>Farmácia Saúde Total · Pituba</dd>
-                      </dl>
-                    </section>
-                    <section class="info-box">
-                      <h3>Classificação</h3>
-                      <dl>
-                        <dt>Status</dt><dd>Aberto</dd>
-                        <dt>Prioridade</dt><dd>Urgente</dd>
-                        <dt>Categoria</dt><dd>Problema no DAM/pagamento</dd>
-                        <dt>Atendente</dt><dd>— não atribuído</dd>
-                      </dl>
-                    </section>
-                  </div>
-                </div>
-              </aside>
-            </div>
-          </section>
-
-          <section class="view" id="view-portal" aria-label="Meus chamados no Portal do Cidadão">
-            <div class="portal-grid">
-              <section class="panel">
-                <div class="panel-head">
-                  <div>
-                    <div class="eyebrow">Portal do Cidadão</div>
-                    <h2>Meus chamados</h2>
-                    <p class="muted">Cards otimizados para celular, com status, SLA e ação principal visíveis.</p>
-                  </div>
-                  <button class="primary-btn" type="button">Abrir chamado por formulário</button>
-                </div>
-                <div class="portal-cards">
-                  <article class="ticket-card">
-                    <div class="ticket-main"><span class="protocol">CH-2026-000184</span><span class="badge b-amber">Em análise</span></div>
-                    <strong class="subject">Paguei o DAM, mas ele não baixou</strong>
-                    <p class="muted">Problema no DAM/pagamento · Farmácia Saúde Total · Pituba</p>
-                    <div class="card-actions"><span class="badge b-amber">Última atualização há 18 min</span><button class="soft-btn" type="button">Acompanhar</button></div>
-                  </article>
-                  <article class="ticket-card">
-                    <div class="ticket-main"><span class="protocol">CH-2026-000173</span><span class="badge b-teal">Aguardando cidadão</span></div>
-                    <strong class="subject">Erro ao enviar documento PDF</strong>
-                    <p class="muted">Documentação · Renovação de alvará · Itapuã</p>
-                    <div class="card-actions"><span class="badge b-sky">Resposta solicitada</span><button class="soft-btn" type="button">Responder</button></div>
-                  </article>
-                  <article class="ticket-card">
-                    <div class="ticket-main"><span class="protocol">CH-2026-000141</span><span class="badge b-emerald">Resolvido</span></div>
-                    <strong class="subject">Como acompanho minha solicitação?</strong>
-                    <p class="muted">Dúvida sobre licenciamento · Valéria</p>
-                    <div class="card-actions"><span class="badge b-emerald">Avaliado com 5 estrelas</span><button class="soft-btn" type="button">Ver histórico</button></div>
-                  </article>
-                </div>
-              </section>
-
-              <aside class="panel">
-                <div class="eyebrow">Fluxo oficial: formulário</div>
-                <h2>Abrir chamado por formulário</h2>
-                <p class="muted">O cidadão pode abrir o chamado direto por aqui. O assistente apenas prepara o resumo quando a dúvida começou no chat.</p>
-                <form class="form-grid" style="margin-top: 14px;">
-                  <select class="field" aria-label="Categoria"><option>Problema no DAM/pagamento</option><option>Documentação</option><option>Acesso ao portal</option></select>
-                  <input class="field" value="Paguei o DAM, mas ele não baixou" aria-label="Assunto" />
-                  <textarea class="field" aria-label="Descrição">Resumo da conversa: cidadão informa pagamento do DAM, mas a solicitação segue pendente e há vistoria marcada.</textarea>
-                  <input class="field" value="maria.santos@email.com" aria-label="Contato" />
-                  <div class="dropzone">Arraste PDFs ou imagens até 2 MB</div>
-                  <button class="primary-btn" type="button">Enviar chamado</button>
-                </form>
-              </aside>
-            </div>
-          </section>
-        </div>
-      </section>
-    </div>
-
-    <section class="help-widget" id="helpWidget" aria-label="Assistente SIGVISA">
-      <header class="help-head">
-        <div class="help-title">
-          <span class="assistant-mark" style="width:34px;height:34px;border-radius:10px;">?</span>
-          <span><strong>Assistente SIGVISA</strong><span>Online · Painel VISA</span></span>
-        </div>
-        <button class="icon-btn" id="closeChat" type="button" aria-label="Minimizar assistente">–</button>
-      </header>
-      <div class="help-body">
-        <p class="chat-line">Olá! Posso ajudar com dúvidas sobre análise de solicitações, requisitos, emissão de alvará e uso do painel.</p>
-        <p class="chat-line user">Como analiso uma solicitação no painel?</p>
-        <p class="chat-line">No Painel VISA: abra Solicitações, confira documentos, use Analisar com IA para parecer preliminar e defira ou indefira com justificativa.</p>
-        <div class="source">Fonte: Manual do Usuário — Análise de solicitações</div>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">SV</div>
+        <div><strong>SIGVISA</strong><span>Painel VISA · DVIS/SMS</span></div>
       </div>
-      <footer class="help-foot">
-        <div class="help-input">
-          <input class="field" placeholder="Escreva sua dúvida..." aria-label="Mensagem ao assistente" />
-          <button class="primary-btn" type="button" aria-label="Enviar">➜</button>
+      <nav class="nav">
+        <div class="grp">Operação</div>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="building-2"></i> Estabelecimentos</a>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="file-text"></i> Solicitações</a>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="badge-check"></i> Alvarás e DAM</a>
+        <div class="grp">Atendimento</div>
+        <a href="#" class="active" onclick="irLista(event)"><i data-lucide="headphones"></i> Central de Chamados <span class="count" id="navCount">0</span></a>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="book-open"></i> Base de Conhecimento</a>
+        <div class="grp">Gestão</div>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="bar-chart-3"></i> Relatórios</a>
+        <a href="#" onclick="naoDisponivel(event)"><i data-lucide="settings"></i> Configurações</a>
+      </nav>
+      <div class="sb-user">
+        <div class="av">BA</div>
+        <div><div class="nm">Bruno Almeida</div><div class="rl">Suporte (TI)</div></div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="crumb" id="crumb">Atendimento <span>/ Central de Chamados</span></div>
+        <div class="spacer"></div>
+        <div class="gsearch"><i data-lucide="search"></i><input placeholder="Buscar em todo o sistema..." /></div>
+        <button class="icon-btn" onclick="toast('3 notificações não lidas')"><i data-lucide="bell"></i><span class="bell-dot">3</span></button>
+        <div class="av" title="Bruno Almeida">BA</div>
+      </div>
+
+      <div class="content">
+        <!-- ====== LISTA ====== -->
+        <section id="view-lista">
+          <div class="page-head">
+            <div>
+              <h1>Central de Chamados</h1>
+              <p>Fila de atendimento da equipe — chamados do cidadão e chamados internos do Painel VISA.</p>
+            </div>
+            <button class="btn" onclick="abrirNovo()"><i data-lucide="plus"></i> Novo chamado</button>
+          </div>
+
+          <div class="metrics" id="metrics"></div>
+
+          <div class="panel">
+            <div class="tabs" id="tabs">
+              <button class="tab active" data-tab="cidadao" onclick="setTab('cidadao')"><i data-lucide="life-buoy" style="width:16px;height:16px"></i> Chamados do cidadão <span class="cnt" id="cnt-cidadao">0</span></button>
+              <button class="tab" data-tab="interno" onclick="setTab('interno')"><i data-lucide="headphones" style="width:16px;height:16px"></i> Chamados internos (TI) <span class="cnt" id="cnt-interno">0</span></button>
+            </div>
+
+            <div class="filters">
+              <div class="fsearch"><i data-lucide="search"></i><input id="f-busca" placeholder="Protocolo, assunto ou solicitante..." oninput="render()" /></div>
+              <select class="f" id="f-status" onchange="render()">
+                <option value="">Status: todos</option>
+                <option value="aberto">Aberto</option>
+                <option value="em_atendimento">Em atendimento</option>
+                <option value="aguardando_cidadao">Aguardando cidadão</option>
+                <option value="resolvido">Resolvido</option>
+                <option value="fechado">Fechado</option>
+              </select>
+              <select class="f" id="f-prioridade" onchange="render()">
+                <option value="">Prioridade: todas</option>
+                <option value="baixa">Baixa</option>
+                <option value="media">Média</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+              <select class="f" id="f-atendente" onchange="render()">
+                <option value="">Atendente: todos</option>
+                <option value="Ana Paula Santana">Ana Paula Santana</option>
+                <option value="Bruno Almeida">Bruno Almeida</option>
+                <option value="__sem">Sem atendente</option>
+              </select>
+              <label class="chk"><input type="checkbox" id="f-naoatrib" onchange="render()" /> Só não atribuídos</label>
+            </div>
+
+            <div style="overflow-x:auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Protocolo</th><th>Assunto</th><th>Solicitante</th>
+                    <th>Categoria</th><th>Prioridade</th><th>Status</th><th>SLA</th>
+                    <th>Atendente</th><th>Atualizado</th><th class="right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+            <div class="tbl-foot"><span id="foot-count">0 chamados</span><span>Protótipo navegável · dados fictícios</span></div>
+          </div>
+        </section>
+
+        <!-- ====== DETALHE ====== -->
+        <section id="view-detalhe" class="hidden"></section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal novo chamado -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="mh"><h2>Abrir chamado interno (Suporte TI)</h2><button class="icon-btn" onclick="fecharNovo()"><i data-lucide="x"></i></button></div>
+      <div class="mb">
+        <div class="field"><label>Assunto</label><input class="inp" id="n-assunto" placeholder="Ex.: Erro ao gerar relatório de produtividade" /></div>
+        <div class="grid2">
+          <div class="field"><label>Categoria</label>
+            <select class="inp" id="n-categoria"><option>Erro no sistema</option><option>Solicitação de acesso</option><option>Lentidão</option><option>Dúvida de uso</option></select>
+          </div>
+          <div class="field"><label>Prioridade</label>
+            <select class="inp" id="n-prioridade"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select>
+          </div>
         </div>
-        <div class="disclaimer">O assistente usa IA e pode cometer erros. Confira informações importantes.</div>
-      </footer>
-    </section>
-    <button class="fab" id="openChat" type="button">💬 Posso ajudar?</button>
-  </main>
+        <div class="field"><label>Descrição</label><textarea class="inp" id="n-descricao" rows="4" placeholder="Descreva o problema, módulo afetado e passos para reproduzir..."></textarea></div>
+      </div>
+      <div class="mf"><button class="btn sec" onclick="fecharNovo()">Cancelar</button><button class="btn" onclick="salvarNovo()"><i data-lucide="send"></i> Enviar chamado</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
-    const app = document.getElementById('app');
-    const viewButtons = document.querySelectorAll('[data-view]');
-    const views = {
-      painel: document.getElementById('view-painel'),
-      portal: document.getElementById('view-portal')
+    // ===================== Dados (mock) =====================
+    const STATUS = {
+      aberto:{lbl:'Aberto',cls:'b-sky'},
+      em_atendimento:{lbl:'Em atendimento',cls:'b-azul'},
+      aguardando_cidadao:{lbl:'Aguardando cidadão',cls:'b-amber'},
+      resolvido:{lbl:'Resolvido',cls:'b-emerald'},
+      fechado:{lbl:'Fechado',cls:'b-slate'},
+    };
+    const PRIO = {
+      baixa:{lbl:'Baixa',cls:'b-slate'}, media:{lbl:'Média',cls:'b-sky'},
+      alta:{lbl:'Alta',cls:'b-amber'}, urgente:{lbl:'Urgente',cls:'b-rose'},
+    };
+    const SLA = {
+      no_prazo:{lbl:'No prazo',cls:'b-emerald',ic:'check-circle-2'},
+      vence:{lbl:'Vence em 4h',cls:'b-amber',ic:'clock'},
+      violado:{lbl:'Violado',cls:'b-rose',ic:'alert-circle'},
     };
 
-    function setView(name) {
-      Object.entries(views).forEach(([key, el]) => el.classList.toggle('active', key === name));
-      viewButtons.forEach((button) => button.classList.toggle('active', button.dataset.view === name));
+    let chamados = [
+      {id:1,protocolo:'CH-2026-000184',tipo:'cidadao',assunto:'Não consigo emitir o DAM do meu alvará',solicitante:'Mariana Costa',documento:'042.918.735-20',contato:'(71) 98814-2201',categoria:'Problema no DAM/pagamento',prioridade:'alta',status:'em_atendimento',sla:'vence',atendente:'Ana Paula Santana',atualizado:'há 18 min',bairro:'Pituba',vinculo:'Farmácia Saúde Total · VIS-2026-00192',
+        mensagens:[
+          {papel:'cidadao',nome:'Mariana Costa',data:'17/06/2026 09:14',texto:'Bom dia. Ao tentar emitir o DAM do meu alvará, o portal retorna mensagem de indisponibilidade. Preciso pagar ainda hoje para concluir a renovação.',anexo:'erro-dam.png'},
+          {papel:'atendente',nome:'Ana Paula Santana',data:'17/06/2026 09:31',texto:'Olá, Mariana. Verifiquei que a solicitação está vinculada ao exercício correto. Vou acionar a equipe financeira para reprocessar o DAM e retorno por aqui.'},
+          {papel:'interna',nome:'Ana Paula Santana',data:'17/06/2026 09:35',texto:'DAM gerado com status inconsistente após integração SEFAZ. Aguardar validação da fila de retorno antes de responder com novo link.'},
+        ]},
+      {id:2,protocolo:'CH-2026-000183',tipo:'cidadao',assunto:'Erro ao enviar documento PDF',solicitante:'Roberto Nascimento',documento:'23.145.998/0001-80',contato:'(71) 3342-1900',categoria:'Documentação',prioridade:'media',status:'aberto',sla:'no_prazo',atendente:null,atualizado:'há 42 min',bairro:'Itapuã',vinculo:'Clínica Mar Azul',
+        mensagens:[{papel:'cidadao',nome:'Roberto Nascimento',data:'17/06/2026 08:50',texto:'Quando tento anexar o contrato social em PDF, o sistema recusa o arquivo. O PDF tem 1,8 MB.',anexo:'contrato-social.pdf'}]},
+      {id:3,protocolo:'CH-2026-000179',tipo:'interno',assunto:'Solicito acesso ao módulo de relatórios',solicitante:'Camila Oliveira',documento:'Matrícula 11827',contato:'camila.oliveira@sms.salvador.ba.gov.br',categoria:'Solicitação de acesso',prioridade:'baixa',status:'aguardando_cidadao',sla:'no_prazo',atendente:'Bruno Almeida',atualizado:'ontem, 16:20',bairro:'—',vinculo:null,
+        mensagens:[{papel:'cidadao',nome:'Camila Oliveira',data:'16/06/2026 16:00',texto:'Preciso de acesso ao módulo de relatórios para acompanhar a produtividade da equipe do meu distrito.'},
+          {papel:'atendente',nome:'Bruno Almeida',data:'16/06/2026 16:20',texto:'Camila, pode confirmar seu perfil atual e o distrito de lotação para liberarmos a permissão correta?'}]},
+      {id:4,protocolo:'CH-2026-000176',tipo:'cidadao',assunto:'Renovação de alvará não aparece no portal',solicitante:'João Batista Reis',documento:'15.730.611/0001-44',contato:'(71) 99604-7110',categoria:'Renovação de alvará',prioridade:'urgente',status:'aberto',sla:'violado',atendente:null,atualizado:'há 2 h',bairro:'Pituba',vinculo:'Laboratório Vida Norte',
+        mensagens:[{papel:'cidadao',nome:'João Batista Reis',data:'17/06/2026 07:30',texto:'Fiz o pagamento da renovação mas o alvará não aparece como ativo no portal. A vistoria já foi agendada.'}]},
+      {id:5,protocolo:'CH-2026-000175',tipo:'cidadao',assunto:'Dúvida sobre documentos para alvará inicial',solicitante:'Fernanda Lima',documento:'987.654.321-00',contato:'(71) 98123-4455',categoria:'Dúvida sobre licenciamento',prioridade:'baixa',status:'resolvido',sla:'no_prazo',atendente:'Ana Paula Santana',atualizado:'há 3 h',bairro:'Brotas',vinculo:'Padaria Pão Quente',
+        mensagens:[{papel:'cidadao',nome:'Fernanda Lima',data:'17/06/2026 06:10',texto:'Quais documentos preciso para o alvará inicial de uma padaria?'},
+          {papel:'atendente',nome:'Ana Paula Santana',data:'17/06/2026 06:40',texto:'Olá, Fernanda! Para padaria são necessários: contrato social, RG/CPF do responsável, planta de layout e o requisito sanitário do CNAE. Segue o link da Central de Ajuda com a lista completa.'}]},
+      {id:6,protocolo:'CH-2026-000171',tipo:'interno',assunto:'Lentidão ao carregar solicitações em Valéria',solicitante:'Paulo Mendes',documento:'Matrícula 10422',contato:'paulo.mendes@sms.salvador.ba.gov.br',categoria:'Lentidão',prioridade:'media',status:'em_atendimento',sla:'no_prazo',atendente:'Bruno Almeida',atualizado:'há 5 h',bairro:'Valéria',vinculo:null,
+        mensagens:[{papel:'cidadao',nome:'Paulo Mendes',data:'17/06/2026 04:00',texto:'A listagem de solicitações do distrito de Valéria está demorando mais de 20 segundos para abrir.'}]},
+      {id:7,protocolo:'CH-2026-000168',tipo:'cidadao',assunto:'Não recebo o e-mail de confirmação',solicitante:'Lucas Andrade',documento:'321.654.987-11',contato:'(71) 98777-1212',categoria:'Acesso ao portal',prioridade:'media',status:'aguardando_cidadao',sla:'no_prazo',atendente:'Ana Paula Santana',atualizado:'há 6 h',bairro:'Cajazeiras',vinculo:null,
+        mensagens:[{papel:'cidadao',nome:'Lucas Andrade',data:'17/06/2026 03:10',texto:'Cadastrei mas não recebo o e-mail de confirmação para ativar minha conta.'},
+          {papel:'atendente',nome:'Ana Paula Santana',data:'17/06/2026 03:30',texto:'Lucas, pode confirmar se o e-mail está correto e verificar a caixa de spam? Podemos reenviar a confirmação.'}]},
+      {id:8,protocolo:'CH-2026-000160',tipo:'interno',assunto:'Erro 500 ao aprovar estabelecimento',solicitante:'Tatiane Rocha',documento:'Matrícula 12090',contato:'tatiane.rocha@sms.salvador.ba.gov.br',categoria:'Erro no sistema',prioridade:'alta',status:'aberto',sla:'vence',atendente:null,atualizado:'há 7 h',bairro:'—',vinculo:null,
+        mensagens:[{papel:'cidadao',nome:'Tatiane Rocha',data:'17/06/2026 02:00',texto:'Ao clicar em aprovar o cadastro de um estabelecimento, aparece erro 500 e a página não conclui a ação.',anexo:'tela-erro-500.png'}]},
+    ];
+
+    const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta'};
+
+    // ===================== Helpers =====================
+    function badge(map,key){const m=map[key]||{lbl:key,cls:'b-slate'};return `<span class="badge ${m.cls}">${m.ic?`<i data-lucide="${m.ic}"></i>`:''}${m.lbl}</span>`;}
+    function iniciais(n){return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();}
+    function byId(id){return chamados.find(c=>c.id===id);}
+    function icons(){if(window.lucide)lucide.createIcons();}
+
+    let toastTimer=null;
+    function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
+    function naoDisponivel(e){e.preventDefault();toast('Disponível no sistema completo — fora do escopo deste protótipo.');}
+
+    // ===================== Lista =====================
+    function setTab(t){state.tab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));render();}
+
+    function filtrados(){
+      const busca=(document.getElementById('f-busca').value||'').toLowerCase();
+      const st=document.getElementById('f-status').value;
+      const pr=document.getElementById('f-prioridade').value;
+      const at=document.getElementById('f-atendente').value;
+      const na=document.getElementById('f-naoatrib').checked;
+      return chamados.filter(c=>c.tipo===state.tab)
+        .filter(c=>!busca||(c.protocolo+' '+c.assunto+' '+c.solicitante).toLowerCase().includes(busca))
+        .filter(c=>!st||c.status===st)
+        .filter(c=>!pr||c.prioridade===pr)
+        .filter(c=>!at|| (at==='__sem'?!c.atendente:c.atendente===at))
+        .filter(c=>!na||!c.atendente);
     }
 
-    viewButtons.forEach((button) => {
-      button.addEventListener('click', () => setView(button.dataset.view));
-    });
+    function render(){
+      // métricas (do tipo atual)
+      const base=chamados.filter(c=>c.tipo===state.tab);
+      const m=[
+        {lbl:'Abertos',ic:'inbox',cls:'b-sky',v:base.filter(c=>c.status==='aberto').length,hint:'aguardando triagem'},
+        {lbl:'Em atendimento',ic:'loader',cls:'b-azul',v:base.filter(c=>c.status==='em_atendimento').length,hint:'com responsável'},
+        {lbl:'Aguardando',ic:'pause',cls:'b-amber',v:base.filter(c=>c.status==='aguardando_cidadao').length,hint:'resposta pendente'},
+        {lbl:'SLA violado',ic:'alert-triangle',cls:'b-rose',v:base.filter(c=>c.sla==='violado').length,hint:'prioridade'},
+      ];
+      document.getElementById('metrics').innerHTML=m.map(x=>`
+        <div class="metric"><div class="lbl"><span class="ic ${x.cls}"><i data-lucide="${x.ic}" style="width:15px;height:15px"></i></span>${x.lbl}</div>
+        <div class="val">${x.v}</div><div class="hint">${x.hint}</div></div>`).join('');
 
-    document.getElementById('themeBtn').addEventListener('click', () => {
-      app.classList.toggle('dark');
-    });
+      document.getElementById('cnt-cidadao').textContent=chamados.filter(c=>c.tipo==='cidadao').length;
+      document.getElementById('cnt-interno').textContent=chamados.filter(c=>c.tipo==='interno').length;
+      document.getElementById('navCount').textContent=chamados.length;
 
-    const widget = document.getElementById('helpWidget');
-    const fab = document.getElementById('openChat');
-    document.getElementById('closeChat').addEventListener('click', () => {
-      widget.classList.add('closed');
-      fab.classList.add('visible');
-    });
-    fab.addEventListener('click', () => {
-      widget.classList.remove('closed');
-      fab.classList.remove('visible');
-    });
+      const rows=filtrados();
+      const tb=document.getElementById('rows');
+      if(!rows.length){
+        tb.innerHTML=`<tr><td colspan="10"><div class="empty"><i data-lucide="search-x"></i><p>Nenhum chamado encontrado com esses filtros.</p></div></td></tr>`;
+      } else {
+        tb.innerHTML=rows.map(c=>`
+          <tr onclick="abrir(${c.id})">
+            <td><span class="proto">${c.protocolo}</span></td>
+            <td><div class="subj">${c.assunto}</div><div class="sub2">${c.bairro!=='—'?c.bairro:''}${c.vinculo?' · '+c.vinculo:''}</div></td>
+            <td class="req"><div class="nm">${c.solicitante}</div><div class="doc">${c.documento}</div></td>
+            <td class="muted">${c.categoria}</td>
+            <td>${badge(PRIO,c.prioridade)}</td>
+            <td>${badge(STATUS,c.status)}</td>
+            <td>${badge(SLA,c.sla)}</td>
+            <td>${c.atendente?`<span class="assignee"><span class="av">${iniciais(c.atendente)}</span> ${c.atendente.split(' ')[0]}</span>`:'<span class="muted">—</span>'}</td>
+            <td class="muted">${c.atualizado}</td>
+            <td class="right">${c.atendente?`<button class="btn ghost sm" onclick="event.stopPropagation();abrir(${c.id})">Ver</button>`:`<button class="btn sm" onclick="event.stopPropagation();assumir(${c.id},true)">Assumir</button>`}</td>
+          </tr>`).join('');
+      }
+      document.getElementById('foot-count').textContent=`${rows.length} chamado(s)`;
+      icons();
+    }
+
+    // ===================== Detalhe =====================
+    function abrir(id){
+      state.abertoId=id;state.respostaModo='resposta';
+      const c=byId(id);
+      document.getElementById('crumb').innerHTML=`Atendimento <span>/ Central de Chamados / ${c.protocolo}</span>`;
+      const v=document.getElementById('view-detalhe');
+      v.innerHTML=`
+        <div class="detail-head">
+          <button class="icon-btn" onclick="voltar()"><i data-lucide="arrow-left"></i></button>
+          <div class="ttl" style="flex:1">
+            <h1>${c.assunto}</h1>
+            <div class="meta">
+              <span class="proto">${c.protocolo}</span>
+              ${badge(STATUS,c.status)} ${badge(PRIO,c.prioridade)} ${badge(SLA,c.sla)}
+              <span class="muted" style="font-size:12px">· aberto por ${c.solicitante} · ${c.atualizado}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="thread" id="thread"></div>
+            <div class="composer">
+              <div class="ctabs">
+                <button class="tab ${state.respostaModo==='resposta'?'active':''}" onclick="setModo('resposta')"><i data-lucide="message-square" style="width:15px;height:15px"></i> Resposta ao ${c.tipo==='cidadao'?'cidadão':'solicitante'}</button>
+                <button class="tab ${state.respostaModo==='nota'?'active':''}" onclick="setModo('nota')"><i data-lucide="lock" style="width:15px;height:15px"></i> Nota interna</button>
+              </div>
+              <textarea id="resp" placeholder="${state.respostaModo==='nota'?'Registre uma observação visível apenas para a equipe...':'Escreva a resposta que será enviada ao solicitante...'}"></textarea>
+              <div class="cfoot">
+                <button class="btn sec sm" onclick="toast('Selecionar arquivo (protótipo)')"><i data-lucide="paperclip"></i> Anexar</button>
+                <button class="btn ghost sm" onclick="inserirResposta()"><i data-lucide="message-square-text"></i> Resposta salva</button>
+                <div class="spacer"></div>
+                <button class="btn sm" onclick="enviar()"><i data-lucide="send"></i> Enviar</button>
+              </div>
+            </div>
+          </div>
+          <div class="side">
+            <div class="card">
+              <h3>Triagem</h3>
+              <div class="bd">
+                <div class="field"><label>Status</label>
+                  <select onchange="mudar('status',this.value)">${Object.keys(STATUS).map(k=>`<option value="${k}" ${c.status===k?'selected':''}>${STATUS[k].lbl}</option>`).join('')}</select></div>
+                <div class="field"><label>Prioridade</label>
+                  <select onchange="mudar('prioridade',this.value)">${Object.keys(PRIO).map(k=>`<option value="${k}" ${c.prioridade===k?'selected':''}>${PRIO[k].lbl}</option>`).join('')}</select></div>
+                <div class="field"><label>Atendente responsável</label>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <div style="flex:1;font-size:13.5px;font-weight:600">${c.atendente?`<span class="assignee"><span class="av">${iniciais(c.atendente)}</span> ${c.atendente}</span>`:'<span class="muted">Sem atendente</span>'}</div>
+                    <button class="btn sec sm" onclick="assumir(${c.id})"><i data-lucide="user-check"></i> ${c.atendente?'Reatribuir':'Assumir'}</button>
+                  </div></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Solicitante</h3>
+              <div class="bd">
+                <div class="kv"><span class="k">Nome</span><span class="v">${c.solicitante}</span></div>
+                <div class="kv"><span class="k">${c.tipo==='cidadao'?'CPF/CNPJ':'Matrícula'}</span><span class="v">${c.documento}</span></div>
+                <div class="kv"><span class="k">Contato</span><span class="v">${c.contato}</span></div>
+                ${c.vinculo?`<div class="kv"><span class="k">Vínculo</span><span class="v"><a href="#" onclick="naoDisponivel(event)">${c.vinculo}</a></span></div>`:''}
+                ${c.bairro!=='—'?`<div class="kv"><span class="k">Bairro</span><span class="v">${c.bairro}</span></div>`:''}
+                <div class="kv"><span class="k">Categoria</span><span class="v">${c.categoria}</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>SLA</h3>
+              <div class="bd">
+                <div class="sla-row"><span class="k">Situação</span>${badge(SLA,c.sla)}</div>
+                <div class="sla-row"><span class="k">1ª resposta</span><strong>12 min</strong></div>
+                <div class="sla-row"><span class="k">Resolução</span><strong>${c.sla==='violado'?'<span style="color:var(--rose-700)">Vencido</span>':'hoje, 18:00'}</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('view-lista').classList.add('hidden');
+      v.classList.remove('hidden');
+      renderThread();
+      window.scrollTo(0,0);
+      icons();
+    }
+
+    function renderThread(){
+      const c=byId(state.abertoId);
+      document.getElementById('thread').innerHTML=c.mensagens.map(m=>`
+        <div class="msg ${m.papel}">
+          <div class="mhead">
+            <span class="av">${iniciais(m.nome)}</span>
+            <span class="nm">${m.nome}</span>
+            ${m.papel==='interna'?'<span class="tag">Nota interna</span>':''}
+            <span class="dt">${m.data}</span>
+          </div>
+          <div class="body">${m.texto}</div>
+          ${m.anexo?`<div class="att"><i data-lucide="paperclip"></i> ${m.anexo}</div>`:''}
+        </div>`).join('');
+      icons();
+    }
+
+    function setModo(m){state.respostaModo=m;document.querySelectorAll('.composer .tab').forEach(b=>{});abrir(state.abertoId);}
+    function inserirResposta(){const t=document.getElementById('resp');t.value='Olá! Recebemos seu chamado e nossa equipe já está analisando. Retornaremos com uma posição em breve. Agradecemos o contato.';}
+
+    function enviar(){
+      const t=document.getElementById('resp');const txt=(t.value||'').trim();
+      if(!txt){toast('Escreva uma mensagem antes de enviar.');return;}
+      const c=byId(state.abertoId);
+      const agora=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      if(state.respostaModo==='nota'){
+        c.mensagens.push({papel:'interna',nome:'Bruno Almeida',data:agora,texto:txt});
+        toast('Nota interna registrada.');
+      } else {
+        c.mensagens.push({papel:'atendente',nome:'Bruno Almeida',data:agora,texto:txt});
+        if(c.status==='aberto'){c.status='em_atendimento';}
+        toast('Resposta enviada ao solicitante.');
+      }
+      c.atualizado='agora';
+      renderThread();
+      // atualiza header/badges
+      abrir(state.abertoId);
+      document.getElementById('resp').value='';
+    }
+
+    function mudar(campo,valor){
+      const c=byId(state.abertoId);c[campo]=valor;c.atualizado='agora';
+      toast(campo==='status'?'Status atualizado.':'Prioridade atualizada.');
+      abrir(state.abertoId);
+    }
+
+    function assumir(id,fromList){
+      const c=byId(id);c.atendente='Bruno Almeida';if(c.status==='aberto')c.status='em_atendimento';c.atualizado='agora';
+      toast('Você assumiu o chamado '+c.protocolo+'.');
+      if(fromList){render();} else {abrir(id);}
+    }
+
+    function voltar(){document.getElementById('view-detalhe').classList.add('hidden');document.getElementById('view-lista').classList.remove('hidden');document.getElementById('crumb').innerHTML='Atendimento <span>/ Central de Chamados</span>';render();window.scrollTo(0,0);}
+    function irLista(e){if(e)e.preventDefault();voltar();}
+
+    // ===================== Novo chamado =====================
+    function abrirNovo(){document.getElementById('overlay').classList.add('open');icons();}
+    function fecharNovo(){document.getElementById('overlay').classList.remove('open');}
+    function salvarNovo(){
+      const assunto=document.getElementById('n-assunto').value.trim();
+      if(!assunto){toast('Informe o assunto do chamado.');return;}
+      const prioridade=document.getElementById('n-prioridade').value;
+      const categoria=document.getElementById('n-categoria').value;
+      const descricao=document.getElementById('n-descricao').value.trim()||'(sem descrição)';
+      const novo={id:Date.now(),protocolo:'CH-2026-000'+(190+chamados.filter(c=>c.tipo==='interno').length),tipo:'interno',assunto,solicitante:'Bruno Almeida',documento:'Matrícula 11920',contato:'bruno.almeida@sms.salvador.ba.gov.br',categoria,prioridade,status:'aberto',sla:'no_prazo',atendente:null,atualizado:'agora',bairro:'—',vinculo:null,
+        mensagens:[{papel:'cidadao',nome:'Bruno Almeida',data:'agora',texto:descricao}]};
+      chamados.unshift(novo);
+      fecharNovo();
+      state.tab='interno';document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='interno'));
+      render();
+      toast('Chamado '+novo.protocolo+' criado.');
+      document.getElementById('n-assunto').value='';document.getElementById('n-descricao').value='';
+    }
+
+    // ===================== Init =====================
+    render();
+    icons();
   </script>
 </body>
 </html>
