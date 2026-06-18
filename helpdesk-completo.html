@@ -457,7 +457,7 @@
           </div>
           <div class="kb-cats" id="kb-cats"></div>
           <div class="panel">
-            <div class="tbl-foot" style="border-bottom:1px solid var(--slate-200)"><strong id="kb-count" style="color:var(--slate-700)">Artigos</strong><button class="btn ghost sm" onclick="kbLimpar()">Ver todos</button></div>
+            <div class="tbl-foot" style="border-bottom:1px solid var(--slate-200)"><strong id="kb-count" style="color:var(--slate-700)">Artigos</strong><div style="display:flex;gap:8px;align-items:center"><select class="f" id="kb-publico" onchange="renderKB()"><option value="">Público: todos</option><option value="interno">Somente Painel (interno)</option><option value="cidadao">Somente Cidadão</option><option value="ambos">Painel + Cidadão</option></select><button class="btn ghost sm" onclick="kbLimpar()">Ver todos</button></div></div>
             <div id="kb-list"></div>
           </div>
         </section>
@@ -515,6 +515,8 @@
           <div class="field"><label>Situação</label>
             <select class="inp" id="a-status"><option value="publicado">Publicado</option><option value="rascunho">Rascunho</option></select></div>
         </div>
+        <div class="field"><label>Visível para</label>
+          <select class="inp" id="a-publico"><option value="ambos">Painel VISA + Portal do Cidadão</option><option value="interno">Somente Painel VISA (interno)</option><option value="cidadao">Somente Portal do Cidadão</option></select></div>
         <div class="field"><label>Resumo</label><textarea class="inp" id="a-resumo" rows="2" placeholder="Breve descrição que aparece na busca..."></textarea></div>
         <div class="field"><label>Conteúdo</label><textarea class="inp" id="a-conteudo" rows="5" placeholder="Escreva o passo a passo do artigo..."></textarea></div>
       </div>
@@ -538,6 +540,7 @@
             <div class="field"><label>Categoria</label><select class="inp" id="ia-categoria"><option>Licenciamento</option><option>DAM/Pagamento</option><option>Acesso ao portal</option><option>Documentos</option></select></div>
             <div class="field"><label>Situação</label><select class="inp" id="ia-status"><option value="publicado">Publicar</option><option value="rascunho">Salvar como rascunho</option></select></div>
           </div>
+          <div class="field"><label>Visível para</label><select class="inp" id="ia-publico"><option value="ambos">Painel VISA + Portal do Cidadão</option><option value="interno">Somente Painel VISA (interno)</option><option value="cidadao">Somente Portal do Cidadão</option></select></div>
           <div class="field"><label>Resumo</label><textarea class="inp" id="ia-resumo" rows="2"></textarea></div>
           <div class="field"><label>Conteúdo (prévia gerada pela IA)</label><div class="ia-prev" id="ia-prev"></div></div>
         </div>
@@ -615,7 +618,13 @@
         conteudo:`<p>Acompanhe cada etapa da sua solicitação pelo Portal.</p><h2>Onde ver</h2><ol><li>Entre em <strong>Minhas solicitações</strong>.</li><li>Clique na solicitação para ver o <strong>status</strong> e o histórico.</li><li>Pendências aparecem destacadas, com o que precisa ser corrigido.</li></ol>`},
       {id:5,titulo:'Quais CNAEs exigem responsável técnico',categoria:'Licenciamento',resumo:'Entenda quando o RT é obrigatório e como vinculá-lo.',leitura:'7 min',status:'rascunho',views:0,atualizado:'há 4 h',
         conteudo:`<p>Alguns CNAEs exigem a vinculação de um responsável técnico (RT).</p><h2>Como saber</h2><p>Ao cadastrar o estabelecimento, o sistema indica se o CNAE exige RT. Quando exigido, é necessário vincular o RT, que deve confirmar o vínculo.</p>`},
+      {id:6,titulo:'Procedimento interno de triagem e priorização de chamados',categoria:'Licenciamento',resumo:'Guia da equipe para classificar prioridade, SLA e encaminhamento dos chamados.',leitura:'5 min',status:'publicado',views:212,atualizado:'há 6 h',
+        conteudo:`<p>Guia de uso interno da equipe de atendimento (não publicado para o cidadão).</p><h2>Classificação</h2><ol><li>Defina a prioridade conforme o impacto (urgente para indisponibilidade).</li><li>Confirme o SLA aplicável.</li><li>Assuma o chamado e registre nota interna quando necessário.</li></ol>`},
     ];
+
+    const ARTPUB={1:'ambos',2:'cidadao',3:'ambos',4:'cidadao',5:'interno',6:'interno'};
+    artigos.forEach(a=>{if(!a.publico)a.publico=ARTPUB[a.id]||'ambos';});
+    const PUBLICO={interno:{lbl:'Interno',cls:'b-slate',ic:'building-2'},cidadao:{lbl:'Cidadão',cls:'b-sky',ic:'users'},ambos:{lbl:'Painel + Cidadão',cls:'b-azul',ic:'globe'}};
 
     const state = {tab:'cidadao', abertoId:null, respostaModo:'resposta', kbCat:'', artigoId:null, portalCat:'', portalBusca:''};
 
@@ -914,15 +923,16 @@
 
     // ===================== Base de Conhecimento =====================
     function irKB(e){if(e)e.preventDefault();hideAll();document.getElementById('view-kb').classList.remove('hidden');setNav('nav-kb');document.getElementById('crumb').innerHTML='Atendimento <span>/ Base de Conhecimento</span>';renderKB();window.scrollTo(0,0);}
-    function kbLimpar(){state.kbCat='';const b=document.getElementById('kb-busca');if(b)b.value='';renderKB();}
+    function kbLimpar(){state.kbCat='';const b=document.getElementById('kb-busca');if(b)b.value='';const p=document.getElementById('kb-publico');if(p)p.value='';renderKB();}
     function kbCat(nome){state.kbCat=(state.kbCat===nome?'':nome);renderKB();}
     function renderKB(){
       const busca=(val('kb-busca')||'').toLowerCase();
+      const pub=val('kb-publico');
       document.getElementById('kb-cats').innerHTML=KBCATS.map(c=>{
         const n=artigos.filter(a=>a.categoria===c.nome).length;
         return `<button class="kb-cat ${state.kbCat===c.nome?'sel':''}" onclick="kbCat('${c.nome}')"><div class="ci"><i data-lucide="${c.ic}"></i></div><h4>${c.nome}</h4><p>${c.desc}</p><span class="n">${n} artigo(s)</span></button>`;
       }).join('');
-      let list=artigos.filter(a=>!state.kbCat||a.categoria===state.kbCat).filter(a=>!busca||(a.titulo+' '+a.categoria+' '+a.resumo).toLowerCase().includes(busca));
+      let list=artigos.filter(a=>!state.kbCat||a.categoria===state.kbCat).filter(a=>!busca||(a.titulo+' '+a.categoria+' '+a.resumo).toLowerCase().includes(busca)).filter(a=>!pub||a.publico===pub);
       document.getElementById('kb-count').textContent=`${list.length} artigo(s)${state.kbCat?' · '+state.kbCat:''}`;
       const el=document.getElementById('kb-list');
       if(!list.length){el.innerHTML=`<div class="empty"><i data-lucide="file-search"></i><p>Nenhum artigo encontrado.</p></div>`;}
@@ -932,7 +942,7 @@
           <div style="flex:1;min-width:0">
             <h4>${a.titulo}</h4>
             <p>${a.resumo}</p>
-            <div class="am"><span class="badge b-azul">${a.categoria}</span>${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>· ${a.leitura} de leitura</span><span>· ${a.views} visualizações</span><span>· atualizado ${a.atualizado}</span></div>
+            <div class="am"><span class="badge b-azul">${a.categoria}</span>${badge(PUBLICO,a.publico)}${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>· ${a.leitura} de leitura</span><span>· ${a.views} visualizações</span></div>
           </div>
           <i data-lucide="chevron-right" style="color:var(--slate-300)"></i>
         </div>`).join('');}
@@ -948,7 +958,7 @@
         <article class="art-read">
           <span class="badge b-azul">${a.categoria}</span>
           <h1>${a.titulo}</h1>
-          <div class="am">${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>${a.leitura} de leitura</span><span>${a.views} visualizações</span><span>atualizado ${a.atualizado}</span></div>
+          <div class="am">${badge(PUBLICO,a.publico)}${a.status==='rascunho'?'<span class="badge b-amber">Rascunho</span>':'<span class="badge b-emerald">Publicado</span>'}<span>${a.leitura} de leitura</span><span>${a.views} visualizações</span></div>
           <div class="ct">${a.conteudo}</div>
           <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--slate-100);padding-top:16px">
             <button class="btn sec sm" onclick="naoDisponivel(event)"><i data-lucide="pencil"></i> Editar</button>
@@ -965,9 +975,10 @@
       if(!titulo){toast('Informe o título do artigo.');return;}
       const categoria=document.getElementById('a-categoria').value;
       const status=document.getElementById('a-status').value;
+      const publico=document.getElementById('a-publico').value;
       const resumo=document.getElementById('a-resumo').value.trim()||'(sem resumo)';
       const conteudo=document.getElementById('a-conteudo').value.trim();
-      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'3 min',status,views:0,atualizado:'agora',conteudo:conteudo?('<p>'+conteudo.replace(/</g,'&lt;')+'</p>'):'<p>(conteúdo a definir)</p>'});
+      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'3 min',status,publico,views:0,atualizado:'agora',conteudo:conteudo?('<p>'+conteudo.replace(/</g,'&lt;')+'</p>'):'<p>(conteúdo a definir)</p>'});
       fecharArtigo();state.kbCat='';renderKB();
       toast('Artigo '+(status==='publicado'?'publicado':'salvo como rascunho')+'.');
       document.getElementById('a-titulo').value='';document.getElementById('a-resumo').value='';document.getElementById('a-conteudo').value='';
@@ -1011,8 +1022,9 @@
       if(!titulo){toast('Informe o título do artigo.');return;}
       const categoria=document.getElementById('ia-categoria').value;
       const status=document.getElementById('ia-status').value;
+      const publico=document.getElementById('ia-publico').value;
       const resumo=document.getElementById('ia-resumo').value.trim()||'(sem resumo)';
-      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'4 min',status,views:0,atualizado:'agora',conteudo:iaConteudo});
+      artigos.unshift({id:Date.now(),titulo,categoria,resumo,leitura:'4 min',status,publico,views:0,atualizado:'agora',conteudo:iaConteudo});
       fecharIA();
       toast('Artigo '+(status==='publicado'?'publicado':'salvo como rascunho')+' na base de conhecimento.');
       abrirArtigo(artigos[0].id);
@@ -1046,7 +1058,7 @@
     }
     function renderPortalKB(){
       const busca=(state.portalBusca||'').toLowerCase();
-      const pub=artigos.filter(a=>a.status==='publicado');
+      const pub=artigos.filter(a=>a.status==='publicado'&&(a.publico==='cidadao'||a.publico==='ambos'));
       const cats=document.getElementById('p-cats');if(!cats)return;
       cats.innerHTML=KBCATS.map(c=>{const n=pub.filter(a=>a.categoria===c.nome).length;return `<button class="kb-cat ${state.portalCat===c.nome?'sel':''}" onclick="portalCat('${c.nome}')"><div class="ci"><i data-lucide="${c.ic}"></i></div><h4>${c.nome}</h4><p>${c.desc}</p><span class="n">${n} artigo(s)</span></button>`;}).join('');
       let list=pub.filter(a=>!state.portalCat||a.categoria===state.portalCat).filter(a=>!busca||(a.titulo+' '+a.categoria+' '+a.resumo).toLowerCase().includes(busca));
