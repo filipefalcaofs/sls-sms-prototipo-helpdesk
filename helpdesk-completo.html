@@ -360,12 +360,12 @@
       </div>
       <nav class="nav">
         <div class="grp">Operação</div>
-        <a href="#" id="nav-dashboard" onclick="irDashboard(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="#" id="nav-dashboard" class="active" onclick="irDashboard(event)"><i data-lucide="layout-dashboard"></i> Dashboard</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="building-2"></i> Estabelecimentos</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="file-text"></i> Solicitações</a>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="badge-check"></i> Alvarás e DAM</a>
         <div class="grp">Atendimento</div>
-        <a href="#" id="nav-chamados" class="active" onclick="irChamados(event)"><i data-lucide="headphones"></i> Central de Chamados <span class="count" id="navCount">0</span></a>
+        <a href="#" id="nav-chamados" onclick="irChamados(event)"><i data-lucide="headphones"></i> Central de Chamados <span class="count" id="navCount">0</span></a>
         <a href="#" id="nav-kb" onclick="irKB(event)"><i data-lucide="book-open"></i> Base de Conhecimento</a>
         <div class="grp">Gestão</div>
         <a href="#" onclick="naoDisponivel(event)"><i data-lucide="bar-chart-3"></i> Relatórios</a>
@@ -389,7 +389,7 @@
 
       <div class="content">
         <!-- ====== LISTA ====== -->
-        <section id="view-lista">
+        <section id="view-lista" class="hidden">
           <div class="page-head">
             <div>
               <h1>Central de Chamados</h1>
@@ -497,7 +497,7 @@
         </section>
 
         <!-- ====== DASHBOARD ====== -->
-        <section id="view-dashboard" class="hidden"></section>
+        <section id="view-dashboard"></section>
 
         <!-- ====== DETALHE ====== -->
         <section id="view-detalhe" class="hidden"></section>
@@ -1518,7 +1518,7 @@
     popularDinamicos();
     render();
     icons();
-    (function(){try{const p=new URLSearchParams(location.search);if(p.get('view')==='portal'){state.portalStandalone=true;abrirPortal('central');}}catch(e){}})();
+    (function(){try{const p=new URLSearchParams(location.search);if(p.get('view')==='portal'){state.portalStandalone=true;abrirPortal('central');}else{irDashboard();}}catch(e){}})();
   </script>
 </body>
 </html>
