@@ -327,6 +327,15 @@
     .cols .c{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;}
     .cols .cb{width:72%;background:linear-gradient(180deg,var(--azul-400),var(--azul-600));border-radius:6px 6px 0 0;min-height:4px;}
     .cols .cl{font-size:11px;color:var(--slate-400);}
+    .panel .dh{margin:0 0 10px;font-size:13px;color:var(--slate-600);font-weight:700;}
+    .donut{width:130px;height:130px;border-radius:50%;position:relative;flex:0 0 auto;}
+    .donut::after{content:'';position:absolute;inset:20px;background:#fff;border-radius:50%;}
+    .donut .dc{position:absolute;inset:0;display:grid;place-items:center;z-index:1;text-align:center;}
+    .donut .dc b{font-size:22px;font-weight:800;}
+    .donut .dc span{font-size:10px;color:var(--slate-500);display:block;}
+    .legend{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--slate-600);}
+    .legend .li{display:flex;align-items:center;gap:7px;}
+    .legend .sq{width:11px;height:11px;border-radius:3px;flex:0 0 auto;}
     @media(max-width:1024px){.dash-grid{grid-template-columns:repeat(2,1fr);}.dash-2{grid-template-columns:1fr;}}
 
     /* ---------- Mobile ---------- */
@@ -1003,28 +1012,50 @@
     function voltar(){irChamados();}
     function irLista(e){if(e)e.preventDefault();irChamados();}
     function irDashboard(e){if(e)e.preventDefault();hideAll();document.getElementById('view-dashboard').classList.remove('hidden');setNav('nav-dashboard');document.getElementById('crumb').innerHTML='Operação <span>/ Dashboard</span>';renderDashboard();window.scrollTo(0,0);}
+    function kpiHtml(k){return `<div class="kpi"><div class="t">${k.t}</div><div class="v" style="${k.cls}">${k.v}</div><div class="d muted">${k.d}</div></div>`;}
     function renderDashboard(){
-      const all=chamados;const cnt=s=>all.filter(c=>c.status===s).length;
+      const all=chamados;const cnt=s=>all.filter(c=>c.status===s).length;const cntSla=s=>all.filter(c=>c.sla===s).length;
+      const np=cntSla('no_prazo'),vc=cntSla('vence'),vi=cntSla('violado');const slaPct=Math.round(np/(np+vc+vi||1)*100);
       const kpis=[
         {t:'Abertos',v:cnt('aberto'),d:'aguardando triagem',cls:'color:var(--sky-700)'},
         {t:'Em atendimento',v:cnt('em_atendimento'),d:'com responsável',cls:'color:var(--azul-700)'},
-        {t:'Aguardando cidadão',v:cnt('aguardando_cidadao'),d:'resposta pendente',cls:'color:var(--amber-700)'},
-        {t:'SLA violado',v:all.filter(c=>c.sla==='violado').length,d:'requer atenção',cls:'color:var(--rose-700)'},
+        {t:'Resolvidos (7 dias)',v:42,d:'+8% vs. semana anterior',cls:'color:var(--emerald-700)'},
+        {t:'SLA violado',v:vi,d:'requer atenção',cls:'color:var(--rose-700)'},
+        {t:'Cumprimento de SLA',v:slaPct+'%',d:'meta: 90%',cls:'color:var(--emerald-700)'},
+        {t:'1ª resposta (média)',v:'26 min',d:'meta: 1 hora',cls:'color:var(--azul-700)'},
+        {t:'Resolução (média)',v:'4h12',d:'meta: 8 horas',cls:'color:var(--azul-700)'},
+        {t:'Reabertura',v:'3,1%',d:'42 de 1.350 chamados',cls:'color:var(--amber-700)'},
       ];
-      const sk=Object.keys(STATUS);const maxS=Math.max(1,...sk.map(k=>cnt(k)));
-      const bars=sk.map(k=>{const n=cnt(k);return `<div class="bar-row"><span class="bl">${STATUS[k].lbl}</span><span class="bt"><span class="bf" style="width:${Math.round(n/maxS*100)}%"></span></span><span class="bv">${n}</span></div>`;}).join('');
-      const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];const serie=[5,8,6,9,7,3,2];const maxD=Math.max(...serie);
-      const cols=dias.map((d,i)=>`<div class="c"><div class="cb" style="height:${Math.round(serie[i]/maxD*120)}px"></div><div class="cl">${d}</div></div>`).join('');
+      const group=(fn)=>{const m={};all.forEach(x=>{const k=fn(x)||'—';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+      const bars=(pairs,color)=>{const max=Math.max(1,...pairs.map(p=>p[1]));return pairs.map(([k,n])=>`<div class="bar-row"><span class="bl">${k}</span><span class="bt"><span class="bf" style="width:${Math.round(n/max*100)}%${color?';background:'+color:''}"></span></span><span class="bv">${n}</span></div>`).join('');};
+      const statusBars=bars(Object.keys(STATUS).map(k=>[STATUS[k].lbl,cnt(k)]));
+      const catBars=bars(group(c=>c.categoria).slice(0,6));
+      const distBars=bars(group(c=>{const d=DISTRITOS.find(x=>x.bairro===c.bairro);return d?d.distrito.replace('Distrito Sanitário ','DS ').replace('de ',''):'Não informado';}).slice(0,6),'#1a82e0');
+      const atdBars=bars(group(c=>c.atendente||'Sem atendente'),'#004a8a');
+      const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];const ab=[7,9,8,11,9,4,3],re=[5,8,6,9,8,3,2];const maxD=Math.max(...ab,...re);
+      const cols=dias.map((d,i)=>`<div class="c" title="Abertos ${ab[i]} · Resolvidos ${re[i]}"><div style="display:flex;gap:3px;align-items:flex-end;height:120px"><div style="width:9px;background:#7dd3fc;border-radius:4px 4px 0 0;height:${Math.round(ab[i]/maxD*120)}px"></div><div style="width:9px;background:var(--azul-600);border-radius:4px 4px 0 0;height:${Math.round(re[i]/maxD*120)}px"></div></div><div class="cl">${d}</div></div>`).join('');
+      const sat=[['5 estrelas',78],['4 estrelas',32],['3 estrelas',10],['2 estrelas',5],['1 estrela',3]];const satBars=bars(sat,'#f59e0b');
+      const pNp=Math.round(np/(np+vc+vi||1)*100),pVc=Math.round(vc/(np+vc+vi||1)*100);
+      const donut=`conic-gradient(var(--emerald-700) 0 ${pNp}%, #f59e0b ${pNp}% ${pNp+pVc}%, var(--rose-700) ${pNp+pVc}% 100%)`;
       document.getElementById('view-dashboard').innerHTML=`
         <div class="page-head"><div><h1>Dashboard</h1><p>Visão geral do atendimento da Central de Chamados.</p></div></div>
-        <div class="dash-grid">${kpis.map(k=>`<div class="kpi"><div class="t">${k.t}</div><div class="v" style="${k.cls}">${k.v}</div><div class="d muted">${k.d}</div></div>`).join('')}</div>
+        <div class="dash-grid">${kpis.slice(0,4).map(kpiHtml).join('')}</div>
+        <div class="dash-grid">${kpis.slice(4).map(kpiHtml).join('')}</div>
         <div class="dash-2">
-          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Chamados por status</h3>${bars}</div>
-          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Chamados nos últimos 7 dias</h3><div class="cols">${cols}</div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por status</h3>${statusBars}</div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Abertos x Resolvidos (7 dias)</h3><div class="cols">${cols}</div><div class="legend" style="flex-direction:row;gap:16px;margin-top:8px"><span class="li"><span class="sq" style="background:#7dd3fc"></span>Abertos</span><span class="li"><span class="sq" style="background:var(--azul-600)"></span>Resolvidos</span></div></div>
         </div>
         <div class="dash-2" style="margin-top:16px">
-          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Satisfação média</h3><div style="font-size:34px;font-weight:800;color:var(--emerald-700)">4,6 <span style="font-size:14px;color:var(--slate-400);font-weight:600">/ 5</span></div><div class="muted" style="font-size:12px">com base em 128 avaliações</div></div>
-          <div class="panel" style="padding:16px"><h3 style="margin:0 0 10px;font-size:13px;color:var(--slate-600)">Tempo médio de 1ª resposta</h3><div style="font-size:34px;font-weight:800;color:var(--azul-700)">26 min</div><div class="muted" style="font-size:12px">meta: 1 hora</div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por categoria</h3>${catBars}</div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Chamados por distrito</h3>${distBars}</div>
+        </div>
+        <div class="dash-2" style="margin-top:16px">
+          <div class="panel" style="padding:16px"><h3 class="dh">Carga por atendente</h3>${atdBars}</div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Satisfação (distribuição)</h3>${satBars}<div class="muted" style="font-size:12px;margin-top:8px">Média 4,6 / 5 · 128 avaliações</div></div>
+        </div>
+        <div class="dash-2" style="margin-top:16px">
+          <div class="panel" style="padding:16px"><h3 class="dh">Cumprimento de SLA</h3><div style="display:flex;align-items:center;gap:18px"><div class="donut" style="background:${donut}"><div class="dc"><div><b>${slaPct}%</b><span>no prazo</span></div></div></div><div class="legend"><span class="li"><span class="sq" style="background:var(--emerald-700)"></span>No prazo (${np})</span><span class="li"><span class="sq" style="background:#f59e0b"></span>Vencendo (${vc})</span><span class="li"><span class="sq" style="background:var(--rose-700)"></span>Violado (${vi})</span></div></div></div>
+          <div class="panel" style="padding:16px"><h3 class="dh">Autoatendimento (assistente + base)</h3><div style="font-size:34px;font-weight:800;color:var(--emerald-700)">68%</div><div class="muted" style="font-size:12px">das dúvidas resolvidas sem abrir chamado</div><div class="bar-row" style="margin-top:10px"><span class="bl">Resolvido pelo assistente</span><span class="bt"><span class="bf" style="width:68%;background:var(--emerald-700)"></span></span><span class="bv">68%</span></div><div class="bar-row"><span class="bl">Virou chamado</span><span class="bt"><span class="bf" style="width:32%;background:var(--slate-400)"></span></span><span class="bv">32%</span></div></div>
         </div>`;
       icons();
     }
